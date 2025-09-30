@@ -7,8 +7,6 @@ export default function RootLayout() {
       {/* Login será la primera pantalla */}
       <Stack.Screen name="loginCliente" />
       <Stack.Screen name="signUpCliente" />
-      <Stack.Screen name="registro_barbero" />
-      <Stack.Screen name="home" />
     </Stack>
   );
 }
