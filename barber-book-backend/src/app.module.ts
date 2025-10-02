@@ -6,6 +6,12 @@ import { AppService } from './app.service';
 import { BarbersModule } from './barbers/barbers.module';
 import { UsersModule } from './users/users.module';
 import { BarbershopsModule } from './barbershops/barbershops.module';
+import { AppointmentsModule } from './appointments/appointments.module';
+import { PaymentsModule } from './payments/payments.module';
+import { SchedBarbershopsModule } from './sched-barbershops/sched-barbershops.module';
+import { ReviewsModule } from './reviews/reviews.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { ServicesModule } from './services/services.module';
 
 @Module({
     imports: [
@@ -36,8 +42,8 @@ import { BarbershopsModule } from './barbershops/barbershops.module';
 
         // Módulos de la aplicación
         BarbersModule,
-        UsersModule,          //Se comentan los dos modulos faltantes para no generar conflictos
-        BarbershopsModule
+        UsersModule,
+        BarbershopsModule, AppointmentsModule, PaymentsModule, SchedBarbershopsModule, ReviewsModule, NotificationsModule, ServicesModule
     ],
     controllers: [AppController],
     providers: [AppService],
