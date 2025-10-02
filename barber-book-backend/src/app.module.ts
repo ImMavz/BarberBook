@@ -36,8 +36,8 @@ import { BarbershopsModule } from './barbershops/barbershops.module';
 
         // Módulos de la aplicación
         BarbersModule,
-/*        UsersModule,          Se comentan los dos modulos faltantes para no generar conflictos
-        BarbershopsModule*/
+        UsersModule,          //Se comentan los dos modulos faltantes para no generar conflictos
+        BarbershopsModule
     ],
     controllers: [AppController],
     providers: [AppService],
