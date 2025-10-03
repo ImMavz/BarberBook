@@ -17,11 +17,6 @@ export class UsersController {
     return this.usersService.findAll();
     }
 
-    @Get(':id')
-    findOne(@Param('id') id: string) {
-    return this.usersService.findOne(+id);
-    }
-
     @Patch(':id')
     update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(+id, updateUserDto);
@@ -45,6 +40,11 @@ export class UsersController {
     @Get('dueños')
     findDuenos() {
         return this.usersService.findDuenos();
+    }
+
+    @Get(':id')
+    findOne(@Param('id') id: string) {
+        return this.usersService.findOne(+id);
     }
 
     @Get('estadisticas/roles') // GET /users/estadisticas/roles
