@@ -9,7 +9,7 @@ export const authService = {
     return response.data;
   },
 
-  login: async (identifier: string, password: string) => {
+  login: async (identifier: number, password: string) => {
     const response = await axios.post(`${API_URL}/auth/login`, { identifier, password });
     return response.data;
   }
