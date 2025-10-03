@@ -24,7 +24,7 @@ export function useAuthViewModel() {
     setLoading(true);
     setError(null);
     try {
-      const response = await authService.login(Number(identifier), password);
+      const response = await authService.login(identifier, password);
       return response;
     } catch (err) {
       setError("Error al iniciar sesión");
