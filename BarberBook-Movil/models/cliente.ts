@@ -1,5 +1,3 @@
-import { Timestamp } from "react-native-reanimated/lib/typescript/commonTypes";
-
 export interface User {
   id?: number;
   nombre: string;
