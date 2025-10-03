@@ -31,7 +31,7 @@ export default function LoginCliente() {
   };
 
   const handleLogin = async () => {
-    const res = await login(identifier, password, "cliente"); 
+    const res = await login(identifier, password); 
     if (res.success) {
       console.log("Login correcto");
       // router.push("./homeCliente");
