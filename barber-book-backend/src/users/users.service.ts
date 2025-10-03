@@ -53,12 +53,19 @@ export class UsersService {
     async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
         const user = await this.findOne(id);
 
+        // Verificar unicidad del correo si se está actualizando
+        if (updateUserDto.correo !== undefined && updateUserDto.correo !== user.correo) {
+            const existingUser = await this.userRepository.findOne({
+                where: { correo: updateUserDto.correo }
+            });
+            if (existingUser && existingUser.id !== id) {
+                throw new ConflictException('El correo electrónico ya está registrado');
+            }
+            user.correo = updateUserDto.correo;
+        }
         // Mapeo de DTO a Entidad para actualización
         if (updateUserDto.nombre !== undefined) {
             user.nombre = updateUserDto.nombre;
-        }
-        if (updateUserDto.correo !== undefined) {
-            user.correo = updateUserDto.correo;
         }
         if (updateUserDto.rol !== undefined) {
             user.rol = updateUserDto.rol;
