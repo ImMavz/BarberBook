@@ -5,8 +5,12 @@ export default function RootLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       {/* Login será la primera pantalla */}
-      <Stack.Screen name="loginCliente" />
-      <Stack.Screen name="signUpCliente" />
+      <Stack.Screen name="loginCliente"/>
+      <Stack.Screen name="signUpCliente"/>
+      <Stack.Screen name="HomeBarbero"/>
+      <Stack.Screen name="CitasAgendadas"/>
+      <Stack.Screen name="settingsBarberShop"/>
+      <Stack.Screen name="historialCitasBarbero"/>
     </Stack>
   );
 }

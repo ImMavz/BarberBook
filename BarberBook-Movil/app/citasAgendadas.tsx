@@ -1,0 +1,268 @@
+import React from "react";
+import {
+View, Text, Image, ScrollView, TouchableOpacity,} from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+const CitasAgendadas = () => {
+  //Datos temporales
+  const navigation = useNavigation<Nav>();
+  type RootStackParamList = {
+  homeBarbero: undefined;
+  citasAgendadas: undefined;
+  };
+
+  type Nav = NativeStackNavigationProp<RootStackParamList>;
+
+
+  const citasHoy: {
+    id: number;
+    nombre: string;
+    servicio: string;
+    hora: string;
+    duracion: string;
+    precio: number;
+    estado: "Completado" | "En Progreso" | "Pendiente";
+    foto: string;
+  }[] = [
+    {
+      id: 1,
+      nombre: "Carlos Mendoza",
+      servicio: "Corte Fade + Barba",
+      hora: "9:00 AM",
+      duracion: "45 min",
+      precio: 25000,
+      estado: "Completado",
+      foto: "https://i.pravatar.cc/150?img=12",
+    },
+    {
+      id: 2,
+      nombre: "Miguel Torres",
+      servicio: "Corte Clásico",
+      hora: "11:30 AM",
+      duracion: "30 min",
+      precio: 20000,
+      estado: "En Progreso",
+      foto: "https://i.pravatar.cc/150?img=5",
+    },
+    {
+      id: 3,
+      nombre: "Roberto Silva",
+      servicio: "Corte Moderno + Lavado",
+      hora: "2:00 PM",
+      duracion: "50 min",
+      precio: 30000,
+      estado: "Pendiente",
+      foto: "https://i.pravatar.cc/150?img=20",
+    },
+  ];
+
+  // Colores del estado de la cita
+
+  const estadoColor = {
+    Completado: "#3ECF8E",
+    "En Progreso": "#ECA33A",
+    Pendiente: "#C5C7CE",
+  };
+
+  const estadoBg = {
+    Completado: "rgba(62, 207, 142, 0.15)",
+    "En Progreso": "rgba(236, 163, 58, 0.15)",
+    Pendiente: "rgba(197, 199, 206, 0.35)",
+  };
+
+  const CitaCard = ({
+    elemento,
+  }: {
+    elemento: {
+      id: number;
+      nombre: string;
+      servicio: string;
+      hora: string;
+      duracion: string;
+      precio: number;
+      estado: "Completado" | "En Progreso" | "Pendiente";
+      foto: string;
+    };
+  }) => (
+    <View
+      style={{
+        backgroundColor: "#fff",
+        padding: 16,
+        borderRadius: 14,
+        marginBottom: 16,
+        flexDirection: "row",
+        justifyContent: "space-between",
+        elevation: 3,
+      }}
+    >
+      {/* FOTO */}
+      <View style={{ flexDirection: "row" }}>
+        <Image
+          source={{ uri: elemento.foto }}
+          style={{ width: 55, height: 55, borderRadius: 30 }}
+        />
+
+        {/* INFORMACIÓN */}
+        <View style={{ marginLeft: 12, justifyContent: "center" }}>
+          <Text style={{ fontSize: 16, fontWeight: "600" }}>
+            {elemento.nombre}
+          </Text>
+          <Text style={{ color: "#777", marginTop: 2 }}>
+            {elemento.servicio}
+          </Text>
+
+          {/* ESTADO */}
+          <View
+            style={{
+              backgroundColor: estadoBg[elemento.estado],
+              paddingHorizontal: 10,
+              paddingVertical: 4,
+              borderRadius: 8,
+              marginTop: 6,
+              alignSelf: "flex-start",
+            }}
+          >
+            <Text
+              style={{
+                color: estadoColor[elemento.estado],
+                fontSize: 12,
+                fontWeight: "600",
+              }}
+            >
+              {elemento.estado}
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      {/* HORARIO Y PRECIO */}
+      <View style={{ alignItems: "flex-end" }}>
+        <Text style={{ color: "#3ECF8E", fontWeight: "700" }}>
+          {elemento.hora}
+        </Text>
+        <Text style={{ color: "#777", marginTop: 4 }}>{elemento.duracion}</Text>
+
+        <Text
+          style={{
+            marginTop: 10,
+            fontWeight: "700",
+            fontSize: 15,
+          }}
+        >
+          ${elemento.precio / 1000}k
+        </Text>
+      </View>
+    </View>
+  );
+
+  return (
+    <ScrollView style={{ flex: 1, backgroundColor: "#F5F7FA" }}>
+      {/* HEADER */}
+      <View
+        style={{
+          padding: 16,
+          backgroundColor: "#2B69FF",
+          borderBottomLeftRadius: 20,
+          borderBottomRightRadius: 20,
+        }}
+      >
+      <TouchableOpacity
+        style={{ flexDirection: "row", alignItems: "center" }}
+        onPress={() => navigation.navigate("homeBarbero")}
+      >
+        <Ionicons name="chevron-back" size={24} color="#fff" />
+        <Text style={{ color: "#fff", fontSize: 20, fontWeight: "600" }}>
+          Citas Agendadas
+        </Text>
+      </TouchableOpacity>
+      </View>
+
+      {/* CONTENIDO */}
+      <View style={{ padding: 16 }}>
+        {/* Encabezado */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 10,
+          }}
+        >
+          <Text style={{ fontSize: 18, fontWeight: "700" }}>Citas de Hoy</Text>
+          <Text style={{ color: "#777" }}>19 Sep 2024</Text>
+        </View>
+
+        {/* Citas de Hoy */}
+        {citasHoy.map((cita) => (
+          <CitaCard key={cita.id} elemento={cita} />
+        ))}
+
+        {/* ACTIVIDAD RECIENTE */}
+        <View style={{ marginTop: 10, marginBottom: 10 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginBottom: 10,
+            }}
+          >
+            <Text style={{ fontSize: 18, fontWeight: "700" }}>
+              Actividad Reciente
+            </Text>
+            <Ionicons
+              name="refresh"
+              size={18}
+              color="#3ECF8E"
+              style={{ marginLeft: 6 }}
+            />
+          </View>
+
+          {citasHoy.map((cita) => (
+            <CitaCard key={`rec-${cita.id}`} elemento={cita} />
+          ))}
+        </View>
+
+        {/* RESUMEN DEL DÍA */}
+        <View
+          style={{
+            backgroundColor: "#2B69FF",
+            padding: 20,
+            borderRadius: 16,
+            marginTop: 10,
+            marginBottom: 30,
+          }}
+        >
+          <Text style={{ color: "#fff", fontSize: 18, fontWeight: "700" }}>
+            Resumen del Día
+          </Text>
+
+          <View
+            style={{
+              flexDirection: "row",
+              marginTop: 20,
+              justifyContent: "space-between",
+            }}
+          >
+            <View style={{ alignItems: "center", width: "50%" }}>
+              <Text style={{ color: "#fff", fontSize: 26, fontWeight: "700" }}>
+                3
+              </Text>
+              <Text style={{ color: "#fff" }}>Citas Hoy</Text>
+            </View>
+
+            <View style={{ alignItems: "center", width: "50%" }}>
+              <Text style={{ color: "#fff", fontSize: 26, fontWeight: "700" }}>
+                $73
+              </Text>
+              <Text style={{ color: "#fff" }}>Ingresos</Text>
+            </View>
+          </View>
+        </View>
+      </View>
+    </ScrollView>
+  );
+};
+
+export default CitasAgendadas;
