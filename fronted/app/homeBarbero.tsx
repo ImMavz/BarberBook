@@ -8,6 +8,7 @@ type RootStackParamList = {
   homeBarbero: undefined;
   citasAgendadas: undefined;
   historialCitasBarbero: undefined;
+  estadisticas: undefined;
 };
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -132,7 +133,7 @@ export default function HomeBarbero() {
         </View>
 
         {/* TARJETA INFERIOR -> ESTADÍSTICAS */}
-        <TouchableOpacity
+        <TouchableOpacity onPress={() => navigation.navigate("estadisticas")}
             style={{
             width: "100%",
             backgroundColor: "#fff",
