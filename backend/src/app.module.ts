@@ -21,7 +21,7 @@ import { ReviewsModule } from './reviews/reviews.module';
       type: 'postgres',
       url: process.env.DATABASE_URL,
       autoLoadEntities: true, // carga todas las entidades sin necesidad de importarlas
-      synchronize: true, // en producción debe ser false
+      synchronize: false, // en producción debe ser false
       ssl: {
         rejectUnauthorized: false, // necesario para Supabase
       },
