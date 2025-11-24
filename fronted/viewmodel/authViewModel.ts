@@ -1,38 +1,38 @@
+import axios from "axios";
 import { useState } from "react";
-import { authService } from "../services/authServices";
-import { User } from "../models/cliente";
 
-export function useAuthViewModel() {
+export const useAuthViewModel = () => {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const API_URL = "http://192.168.1.32:3000";
 
-  const register = async (user: User) => {
-    setLoading(true);
-    setError(null);
+  const register = async (user: any) => {
     try {
-      const response = await authService.register(user);
-      return response;
-    } catch (err) {
-      setError("Error en el registro");
-      return { success: false };
+      setLoading(true);
+      const res = await axios.post(`${API_URL}/users`, user);
+      return { success: true, data: res.data };
+    } catch (error: any) {
+      return { success: false, error: error.response?.data };
     } finally {
       setLoading(false);
     }
   };
 
   const login = async (identifier: string, password: string) => {
+  try {
     setLoading(true);
-    setError(null);
-    try {
-      const response = await authService.login(identifier, password);
-      return response;
-    } catch (err) {
-      setError("Error al iniciar sesión");
-      return { success: false };
-    } finally {
-      setLoading(false);
-    }
-  };
+    const res = await axios.post(`${API_URL}/auth/login`, {
+      correo: identifier,
+      contraseña: password,
+    });
+    return { success: true, data: res.data };
+  } catch (error: any) {
+    console.log("⚠ ERROR LOGIN:", error.response?.data || error.message);
+    return { success: false, error: error.response?.data };
+  } finally {
+    setLoading(false);
+  }
+};
 
-  return { loading, error, register, login };
-}
+
+  return { register, login, loading };
+};

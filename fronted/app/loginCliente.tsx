@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Animated } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Alert } from "react-native";
 import InputField from "../components/ui/inputField";
 import Button from "../components/ui/button";
 import { useAuthViewModel } from "../viewmodel/authViewModel";
@@ -24,17 +24,24 @@ export default function LoginCliente() {
       useNativeDriver: false,
     }).start();
 
-    // 👉 Si se toca "dueño", redirige a la pantalla del login dueño
     if (tab === "dueno") {
       router.push("./loginDueno");
     }
   };
 
   const handleLogin = async () => {
-    const res = await login(identifier, password); 
+    if (!identifier || !password) {
+      Alert.alert("Error", "Todos los campos son obligatorios");
+      return;
+    }
+
+    const res = await login(identifier, password);
+
     if (res.success) {
       console.log("Login correcto");
-      // router.push("./homeCliente");
+      router.push("./homeBarbero");  // Cambia a tu pantalla real
+    } else {
+      Alert.alert("Error", res.message || "Credenciales incorrectas");
     }
   };
 
@@ -48,9 +55,7 @@ export default function LoginCliente() {
       <Text style={styles.title}>BarberBook</Text>
       <Text style={styles.subtitle}>Agenda tus cortes</Text>
 
-      {/* White Card */}
       <View style={styles.card}>
-        {/* Tabs Cliente/Dueño */}
         <View style={styles.tabContainer}>
           <TouchableOpacity style={{ flex: 1, alignItems: "center" }} onPress={() => handleSwitch("cliente")}>
             <Text style={[styles.tabText, activeTab === "cliente" && styles.activeTab]}>Cliente</Text>
@@ -72,7 +77,6 @@ export default function LoginCliente() {
           />
         </View>
 
-        {/* Formulario normal del cliente */}
         <InputField 
           placeholder="Correo o Cédula"
           value={identifier} 

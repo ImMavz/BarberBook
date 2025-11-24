@@ -10,6 +10,7 @@ import { AppointmentsModule } from './appointments/appointments.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PaymentsModule } from './payments/payments.module';
 import { ReviewsModule } from './reviews/reviews.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -42,6 +43,8 @@ import { ReviewsModule } from './reviews/reviews.module';
     NotificationsModule,
 
     PaymentsModule,
+
+    AuthModule,
 
     ReviewsModule,
   ],

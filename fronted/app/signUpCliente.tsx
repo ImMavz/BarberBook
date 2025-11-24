@@ -8,14 +8,13 @@ import { LinearGradient } from "expo-linear-gradient";
 
 export default function SignUpCliente() {
   const router = useRouter();
-  const { register } = useAuthViewModel();
+  const { register, loading } = useAuthViewModel();
 
   const [activeTab, setActiveTab] = useState<"cliente" | "dueno">("cliente");
   const [underlineAnim] = useState(new Animated.Value(0));
 
   // Campos cliente
   const [nombre, setNombre] = useState("");
-  const [apellido, setApellido] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -27,17 +26,26 @@ export default function SignUpCliente() {
       useNativeDriver: false,
     }).start();
 
-    // 👉 Si es dueño, redirige al formulario de signup dueño
     if (tab === "dueno") {
       router.push("./signUpDueno");
     }
   };
 
   const handleRegister = async () => {
-    const user = { nombre, apellido, email, password, rol: "cliente" };
+    const user = {
+      nombre,
+      correo: email,
+      contraseña: password,
+      rol: "cliente",
+    };
+
     const res = await register(user);
+
     if (res.success) {
+      alert("Usuario creado con éxito 🎉");
       router.push("./loginCliente");
+    } else {
+      alert("Error: " + JSON.stringify(res.error));
     }
   };
 
@@ -51,9 +59,7 @@ export default function SignUpCliente() {
       <Text style={styles.title}>BarberBook</Text>
       <Text style={styles.subtitle}>Agenda tus cortes</Text>
 
-      {/* White Card */}
       <View style={styles.card}>
-        {/* Switch Cliente/Dueño */}
         <View style={styles.tabContainer}>
           <TouchableOpacity style={{ flex: 1, alignItems: "center" }} onPress={() => handleSwitch("cliente")}>
             <Text style={[styles.tabText, activeTab === "cliente" && styles.activeTab]}>Cliente</Text>
@@ -75,13 +81,11 @@ export default function SignUpCliente() {
           />
         </View>
 
-        {/* Formulario cliente */}
         <InputField placeholder="Nombre" value={nombre} onChangeText={setNombre} />
-        <InputField placeholder="Apellido" value={apellido} onChangeText={setApellido} />
         <InputField placeholder="Correo electrónico" value={email} onChangeText={setEmail} />
         <InputField placeholder="Contraseña" secureTextEntry value={password} onChangeText={setPassword} />
 
-        <Button title="Registrarse" onPress={handleRegister} />
+        <Button title={loading ? "Cargando..." : "Registrarse"} onPress={handleRegister} disabled={loading} />
 
         <TouchableOpacity onPress={() => router.push("./loginCliente")}>
           <Text style={styles.link}>¿Ya tienes una cuenta? ¡Inicia sesión!</Text>
@@ -95,8 +99,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: "center", padding: 20 },
   title: { fontSize: 28, fontWeight: "bold", textAlign: "center", color: "#fff" },
   subtitle: { fontSize: 16, textAlign: "center", marginBottom: 20, color: "#fff" },
-
-  // White card igual al login
   card: {
     backgroundColor: "#fff",
     borderRadius: 16,
@@ -106,7 +108,6 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 5,
   },
-
   link: { color: "#2D6FF7", textAlign: "center", marginTop: 12 },
   tabContainer: { flexDirection: "row", marginBottom: 20, position: "relative" },
   tabText: { fontWeight: "bold", color: "#999" },
