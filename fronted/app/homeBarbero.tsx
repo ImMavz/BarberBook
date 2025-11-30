@@ -59,7 +59,7 @@ export default function HomeBarbero() {
           source={{ uri: "https://i.pravatar.cc/150?img=1" }}
           style={styles.avatar}
         />
-        <View style={{ marginLeft: 10 }}>
+        <View style={{ marginLeft: 10}}>
           <Text style={styles.barberName}>Donde dieguito</Text>
           <Text style={styles.welcome}>Bienvenido, Samuel</Text>
         </View>
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 25,
+    paddingVertical: 40,
   },
   avatar: {
     width: 55,
