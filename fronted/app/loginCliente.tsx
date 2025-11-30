@@ -39,7 +39,7 @@ export default function LoginCliente() {
 
     if (res.success) {
       console.log("Login correcto");
-      router.push("./homeBarbero");  // Cambia a tu pantalla real
+      router.push("./homeCliente");  // Cambia a tu pantalla real
     } else {
       Alert.alert("Error", res.message || "Credenciales incorrectas");
     }
