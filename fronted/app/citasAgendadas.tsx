@@ -1,6 +1,6 @@
 import React from "react";
-import {
-View, Text, Image, ScrollView, TouchableOpacity,} from "react-native";
+import { useState } from "react";
+import {View, Text, Image, ScrollView, TouchableOpacity, Modal, StyleSheet} from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -15,6 +15,26 @@ const CitasAgendadas = () => {
 
   type Nav = NativeStackNavigationProp<RootStackParamList>;
 
+  // Estado para controlar el modal
+  const [modalVisible, setModalVisible] = useState(false);
+
+  // Cita seleccionada
+  const [citaSeleccionada, setCitaSeleccionada] = useState<any>(null);
+
+  // Manejar cuando tocan una cita
+  const abrirOpciones = (cita: any) => {
+    setCitaSeleccionada(cita);
+    setModalVisible(true);
+  };
+
+  // 👉 Aquí pondrás lógica del backend más adelante
+  const cambiarEstadoCita = (nuevoEstado: string) => {
+    if (citaSeleccionada) {
+      console.log("Actualizar al backend →", citaSeleccionada.id, nuevoEstado);
+    }
+    // cerrar modal
+    setModalVisible(false);
+  };
 
   const citasHoy: {
     id: number;
@@ -86,7 +106,8 @@ const CitasAgendadas = () => {
       foto: string;
     };
   }) => (
-    <View
+    <TouchableOpacity
+      onPress={() => abrirOpciones(elemento)}
       style={{
         backgroundColor: "#fff",
         padding: 16,
@@ -154,7 +175,7 @@ const CitasAgendadas = () => {
           ${elemento.precio / 1000}k
         </Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
@@ -169,7 +190,7 @@ const CitasAgendadas = () => {
         }}
       >
       <TouchableOpacity
-        style={{ flexDirection: "row", alignItems: "center" }}
+        style={{ flexDirection: "row", alignItems: "center", paddingTop: 20 }}
         onPress={() => navigation.navigate("homeBarbero")}
       >
         <Ionicons name="chevron-back" size={24} color="#fff" />
@@ -254,15 +275,98 @@ const CitasAgendadas = () => {
 
             <View style={{ alignItems: "center", width: "50%" }}>
               <Text style={{ color: "#fff", fontSize: 26, fontWeight: "700" }}>
-                $73
+                $73k
               </Text>
               <Text style={{ color: "#fff" }}>Ingresos</Text>
             </View>
           </View>
         </View>
       </View>
+
+      {/* MODAL */}
+      {citaSeleccionada && (
+        <Modal
+          transparent
+          animationType="slide"
+          visible={modalVisible}
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View style={{
+            flex: 1,
+            justifyContent: "flex-end",
+            backgroundColor: "rgba(0,0,0,0.4)",
+          }}>
+            <View style={{
+              backgroundColor: "#fff",
+              padding: 20,
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+            }}>
+              
+              <Text style={{ fontSize: 18, fontWeight: "700", marginBottom: 15 }}>
+                Opciones de la cita
+              </Text>
+
+              {/* COMPLETADA */}
+              <TouchableOpacity
+                style={modalStyles.btn}
+                onPress={() => cambiarEstadoCita("Completado")}
+              >
+                <Text style={modalStyles.txt}>Completada ✅</Text>
+              </TouchableOpacity>
+
+              {/* EN PROGRESO */}
+              <TouchableOpacity
+                style={modalStyles.btn}
+                onPress={() => cambiarEstadoCita("En Progreso")}
+              >
+                <Text style={modalStyles.txt}>En Progreso ⌛</Text>
+              </TouchableOpacity>
+
+              {/* PENDIENTE */}
+              <TouchableOpacity
+                style={modalStyles.btn}
+                onPress={() => cambiarEstadoCita("Pendiente")}
+              >
+                <Text style={modalStyles.txt}>Pendiente ⏰</Text>
+              </TouchableOpacity>
+
+              {/* CANCELAR */}
+              <TouchableOpacity
+                style={[modalStyles.btn, { backgroundColor: "#eee" }]}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={[modalStyles.txt, { color: "#333" }]}>Cancelar ❌</Text>
+              </TouchableOpacity>
+
+              {/* Devolevrse */}
+              <TouchableOpacity
+                style={[modalStyles.btn, { backgroundColor: "#eee" }]}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={[modalStyles.txt, { color: "#333" }]}>Devolverse</Text>
+              </TouchableOpacity>
+
+            </View>
+          </View>
+        </Modal>
+      )}
     </ScrollView>
   );
 };
+
+const modalStyles = StyleSheet.create({
+  btn: {
+    paddingVertical: 13,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    backgroundColor: "#f4f4f4",
+    marginBottom: 10,
+  },
+  txt: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+});
 
 export default CitasAgendadas;
