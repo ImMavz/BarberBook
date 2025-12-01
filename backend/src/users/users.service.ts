@@ -22,7 +22,7 @@ export class UsersService {
       throw new BadRequestException('El correo ya está registrado');
     }
 
-    // Crear usuario con DTO
+    // Crear usuario desde DTO
     const user = this.usersRepository.create(dto);
 
     // Hash contraseña
@@ -38,8 +38,12 @@ export class UsersService {
     return result;
   }
 
-  async findByEmail(correo: string) {
-  return this.usersRepository.findOne({ where: { correo } });
+  // 🔥 ESTA ERA LA FUNCIÓN QUE FALLABA
+  async findOne(id: number) {
+    return this.usersRepository.findOne({ where: { id } });
   }
 
+  async findByEmail(correo: string) {
+    return this.usersRepository.findOne({ where: { correo } });
+  }
 }

@@ -6,34 +6,44 @@ import {
   TouchableOpacity,
   ScrollView,
   Platform,
+  Alert,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
+import { getToken, getUsuario } from "../utils/authStorage";
 
-const API_URL = "http://192.168.1.32:3000"; // 👉 cambia según tu IP
+const API_URL = "http://192.168.1.32:3000"; 
 
 export default function AgendarCita() {
   const [barberos, setBarberos] = useState<any[]>([]);
   const [servicios, setServicios] = useState<any[]>([]);
+
   const [selectedBarbero, setSelectedBarbero] = useState<number | null>(null);
   const [selectedServicio, setSelectedServicio] = useState<number | null>(null);
 
-  // Fecha seleccionada
   const [selectedFecha, setSelectedFecha] = useState<string | null>(null);
   const [showPicker, setShowPicker] = useState(false);
 
-  // Horarios (manual, luego se puede automatizar)
   const [horarioSeleccionado, setHorarioSeleccionado] = useState<string | null>(
     null
   );
+
   const horarios = ["10:00", "11:00", "14:00", "15:00", "16:00"];
 
-  // Cargar barberos y servicios desde el backend
+  const [usuarioLogueado, setUsuarioLogueado] = useState<any>(null);
+
+  // Cargar usuario + datos al iniciar
   useEffect(() => {
+    cargarUsuario();
     cargarBarberos();
     cargarServicios();
   }, []);
+
+  const cargarUsuario = async () => {
+    const user = await getUsuario();
+    setUsuarioLogueado(user);
+  };
 
   const cargarBarberos = async () => {
     try {
@@ -61,37 +71,70 @@ export default function AgendarCita() {
     }
   };
 
-  // Crear cita
+  // Calcular hora fin con duración
+  const sumarMinutos = (hora: string, minutos: number): string => {
+    const [h, m] = hora.split(":").map((n) => parseInt(n));
+    const fecha = new Date();
+    fecha.setHours(h, m + minutos, 0);
+    return fecha.toTimeString().slice(0, 5);
+  };
+
+  // Crear la cita
   const crearCita = async () => {
     if (!selectedBarbero || !selectedServicio || !selectedFecha || !horarioSeleccionado) {
-      alert("⚠️ Debes completar todos los campos");
+      Alert.alert("Faltan datos", "Debes completar todos los campos");
       return;
     }
 
+    const servicio = servicios.find((s) => s.id === selectedServicio);
+    const horaFinCalculada = sumarMinutos(horarioSeleccionado, servicio.duracion);
+
     try {
-      const res = await axios.post(`${API_URL}/appointments`, {
-        id_cliente: 1, // 👉 REEMPLAZA con el ID real del usuario
+      const token = await getToken();
+      const usuario = await getUsuario(); // ← ID REAL del usuario logeado
+
+      if (!token || !usuario) {
+        console.log("⚠️ Usuario no logeado");
+        Alert.alert("Error", "Debes iniciar sesión para agendar.");
+        return;
+      }
+
+      const body = {
         id_barbero: selectedBarbero,
         id_servicio: selectedServicio,
         fecha: selectedFecha,
         horaInicio: horarioSeleccionado,
-        horaFin: horarioSeleccionado, // puedes calcular duración después
-      });
+        horaFin: horaFinCalculada,
+      };
+
+      console.log("📤 Enviando cita:", body);
+
+      const res = await axios.post(
+        `${API_URL}/appointments`,
+        body,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       console.log("✔️ Cita creada:", res.data);
-      alert("✔️ ¡Cita agendada con éxito!");
+
+      Alert.alert("Cita creada", "Tu cita se agendó con éxito");
 
     } catch (error: any) {
       console.log("❌ ERROR CREAR CITA:", error.response?.data);
-      alert("No se pudo crear la cita");
+      Alert.alert("Error", "No se pudo crear la cita");
     }
   };
+
 
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Agendar Cita</Text>
 
-      {/* Selección de Barbero */}
+      {/* BARBEROS */}
       <Text style={styles.sectionTitle}>Selecciona un barbero</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         {barberos.map((b) => (
@@ -104,12 +147,14 @@ export default function AgendarCita() {
             onPress={() => setSelectedBarbero(b.id)}
           >
             <Ionicons name="person-outline" size={28} color="#555" />
-            <Text style={styles.optionText}>{b.nombre}</Text>
+            <Text style={styles.optionText}>
+              {b.usuario?.nombre ?? "Barbero"}
+            </Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
 
-      {/* Selección de Servicio */}
+      {/* SERVICIOS */}
       <Text style={styles.sectionTitle}>Selecciona un servicio</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         {servicios.map((s) => (
@@ -127,16 +172,13 @@ export default function AgendarCita() {
         ))}
       </ScrollView>
 
-      {/* Selección de Fecha */}
+      {/* FECHA */}
       <Text style={styles.sectionTitle}>Selecciona una fecha</Text>
-
       <TouchableOpacity
         style={styles.selector}
         onPress={() => setShowPicker(true)}
       >
-        <Text style={styles.selectorText}>
-          {selectedFecha ? selectedFecha : "Elegir fecha"}
-        </Text>
+        <Text style={styles.selectorText}>{selectedFecha || "Elegir fecha"}</Text>
       </TouchableOpacity>
 
       {showPicker && (
@@ -148,9 +190,8 @@ export default function AgendarCita() {
         />
       )}
 
-      {/* Selección de Horario */}
+      {/* HORARIOS */}
       <Text style={styles.sectionTitle}>Selecciona un horario</Text>
-
       <View style={styles.horariosRow}>
         {horarios.map((h) => (
           <TouchableOpacity
@@ -166,7 +207,7 @@ export default function AgendarCita() {
         ))}
       </View>
 
-      {/* Botón Agendar */}
+      {/* BOTÓN */}
       <TouchableOpacity style={styles.submitBtn} onPress={crearCita}>
         <Text style={styles.submitText}>Agendar cita</Text>
       </TouchableOpacity>
@@ -177,23 +218,10 @@ export default function AgendarCita() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    backgroundColor: "#f5f6f8",
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: "700",
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginTop: 20,
-    marginBottom: 10,
-  },
+  container: { padding: 20, backgroundColor: "#f5f6f8" },
+  title: { fontSize: 26, fontWeight: "700", marginBottom: 20 },
+  sectionTitle: { fontSize: 18, fontWeight: "600", marginTop: 20, marginBottom: 10 },
 
-  // BARBEROS Y SERVICIOS
   optionBox: {
     backgroundColor: "#fff",
     padding: 15,
@@ -214,24 +242,16 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 
-  // FECHA
   selector: {
     backgroundColor: "#fff",
     padding: 15,
     borderRadius: 12,
     elevation: 3,
   },
-  selectorText: {
-    fontSize: 16,
-    color: "#555",
-  },
+  selectorText: { fontSize: 16, color: "#555" },
 
-  // HORARIOS
-  horariosRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-  },
+  horariosRow: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+
   horaBox: {
     backgroundColor: "#fff",
     paddingVertical: 12,
@@ -244,12 +264,9 @@ const styles = StyleSheet.create({
     borderColor: "#6A5AE0",
     borderWidth: 2,
   },
-  horaText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
 
-  // BOTÓN
+  horaText: { fontSize: 16, fontWeight: "600" },
+
   submitBtn: {
     backgroundColor: "#6A5AE0",
     padding: 18,
@@ -257,9 +274,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 30,
   },
-  submitText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 18,
-  },
+  submitText: { color: "#fff", fontWeight: "700", fontSize: 18 },
 });

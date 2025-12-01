@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
+import { getToken, getUsuario } from "../utils/authStorage";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
@@ -17,40 +26,39 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 export default function HomeCliente() {
   const navigation = useNavigation<Nav>();
 
-  // 👉 Cambia IP por la tuya
   const API_URL = "http://192.168.1.32:3000";
 
-  // 👉 Luego esto vendrá del login
-  const CLIENTE_ID = 1;
+  const [usuario, setUsuario] = useState<any>(null);
+  const [proximaCita, setProximaCita] = useState<any>(null);
 
-  const [proximaCita, setProximaCita] = useState<string | null>(null);
-
-  const [barberosSugeridos, setBarberosSugeridos] = useState([
-    { id: 1, nombre: "Carlos Barbero", especialidad: "Cortes - Degradados", foto: "https://i.pravatar.cc/150?img=12" },
-    { id: 2, nombre: "David Barber", especialidad: "Barba + Corte", foto: "https://i.pravatar.cc/150?img=5" },
-  ]);
-
-  const [actividadReciente, setActividadReciente] = useState([
-    {
-      id: 1,
-      descripcion: "Recordatorio de cita para mañana a las 10am",
-      hace: "Hace 1h",
-      icono: "notifications-outline",
-    },
-    {
-      id: 2,
-      descripcion: "Tuviste una cita con Carlos - Corte básico",
-      hace: "Ayer",
-      icono: "cut-outline",
-    },
-  ]);
+  // Cargar usuario logeado
+  useEffect(() => {
+    (async () => {
+      const u = await getUsuario();
+      if (!u) {
+        Alert.alert("Error", "No hay usuario logueado");
+        return;
+      }
+      setUsuario(u);
+      cargarProximaCita(u.id);
+    })();
+  }, []);
 
   // =============================
-  // 👉 FUNCIÓN PARA CARGAR CITAS
+  // 👉 FUNCIÓN PARA CARGAR PRÓXIMA CITA
   // =============================
-  const cargarCitas = async () => {
+  const cargarProximaCita = async (clienteId: number) => {
     try {
-      const res = await axios.get(`${API_URL}/appointments/cliente/${CLIENTE_ID}`);
+      const token = await getToken();
+
+      if (!token) {
+        console.log("⚠️ Usuario no logeado");
+        return;
+      }
+
+      const res = await axios.get(`${API_URL}/appointments/cliente/${clienteId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       if (!res.data || res.data.length === 0) {
         setProximaCita(null);
@@ -64,17 +72,12 @@ export default function HomeCliente() {
         return fechaA.getTime() - fechaB.getTime();
       });
 
-      const cita = ordenadas[0];
-      setProximaCita(`${cita.fecha} • ${cita.horaInicio}`);
-    } catch (err: any) {
-      console.log("❌ Error cargando citas:", err.response?.data || err.message);
+      setProximaCita(ordenadas[0]);
+
+    } catch (error: any) {
+      console.log("❌ Error cargando citas:", error.response?.data || error.message);
     }
   };
-
-  // 👉 Cargar citas al abrir la pantalla
-  useEffect(() => {
-    cargarCitas();
-  }, []);
 
   return (
     <ScrollView style={styles.container}>
@@ -86,7 +89,7 @@ export default function HomeCliente() {
           style={styles.avatar}
         />
         <View style={{ marginLeft: 10 }}>
-          <Text style={styles.clientName}>Hola, Juan</Text>
+          <Text style={styles.clientName}>Hola, {usuario?.nombre || "Cliente"}</Text>
           <Text style={styles.welcome}>Bienvenido a BarberBook</Text>
         </View>
 
@@ -101,9 +104,20 @@ export default function HomeCliente() {
         <View style={{ marginLeft: 12 }}>
           <Text style={{ fontSize: 16, fontWeight: "700" }}>Próxima cita</Text>
 
-          <Text style={{ marginTop: 4, color: "#555" }}>
-            {proximaCita ?? "No tienes citas próximas"}
-          </Text>
+          {proximaCita ? (
+            <>
+              <Text style={{ marginTop: 4, color: "#555", fontSize: 15 }}>
+                📅 {proximaCita.fecha} — {proximaCita.horaInicio}
+              </Text>
+              <Text style={{ color: "#777", marginTop: 4 }}>
+                ✂️ Con: {proximaCita.barbero?.usuario?.nombre || "Barbero"}
+              </Text>
+            </>
+          ) : (
+            <Text style={{ marginTop: 4, color: "#555" }}>
+              No tienes citas próximas
+            </Text>
+          )}
         </View>
       </View>
 
@@ -142,37 +156,7 @@ export default function HomeCliente() {
 
       </View>
 
-      {/* BARBEROS SUGERIDOS */}
-      <Text style={styles.sectionTitle}>Barberos sugeridos</Text>
-
-      {barberosSugeridos.map((b) => (
-        <View key={b.id} style={styles.barberItem}>
-          <Image source={{ uri: b.foto }} style={styles.barberAvatar} />
-
-          <View style={{ flex: 1, marginLeft: 12 }}>
-            <Text style={styles.barberName}>{b.nombre}</Text>
-            <Text style={styles.barberSpecialty}>{b.especialidad}</Text>
-          </View>
-
-          <Ionicons name="chevron-forward" size={24} color="#777" />
-        </View>
-      ))}
-
-      {/* ACTIVIDAD RECIENTE */}
-      <Text style={styles.sectionTitle}>Actividad reciente</Text>
-
-      {actividadReciente.map((item) => (
-        <View key={item.id} style={styles.activityItem}>
-          <Ionicons name={item.icono as any} size={28} color="#6A5AE0" />
-
-          <View style={{ flex: 1, marginLeft: 10 }}>
-            <Text style={styles.activityDesc}>{item.descripcion}</Text>
-          </View>
-
-          <Text style={styles.activityTime}>{item.hace}</Text>
-        </View>
-      ))}
-
+      {/* CONTENIDO EXTRA (opcional) */}
       <View style={{ height: 40 }} />
 
     </ScrollView>
@@ -236,55 +220,5 @@ const styles = StyleSheet.create({
     marginTop: 4,
     color: "#777",
     fontSize: 12,
-  },
-
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    marginTop: 30,
-    marginBottom: 10,
-  },
-
-  barberItem: {
-    flexDirection: "row",
-    backgroundColor: "white",
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 10,
-    alignItems: "center",
-  },
-  barberAvatar: {
-    width: 45,
-    height: 45,
-    borderRadius: 50,
-  },
-  barberName: {
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  barberSpecialty: {
-    color: "#777",
-    marginTop: 2,
-    fontSize: 12,
-  },
-
-  activityItem: {
-    flexDirection: "row",
-    backgroundColor: "white",
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 12,
-    alignItems: "center",
-  },
-
-  activityDesc: {
-    fontSize: 12,
-    color: "#666",
-  },
-
-  activityTime: {
-    fontSize: 11,
-    color: "#aaa",
-    marginLeft: 10,
   },
 });

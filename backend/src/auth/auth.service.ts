@@ -30,4 +30,8 @@ export class AuthService {
       },
     };
   }
+
+  async getUserById(id: number) {
+    return this.usersService.findOne(id);
+  }
 }

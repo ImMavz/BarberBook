@@ -39,9 +39,9 @@ export default function LoginCliente() {
 
     if (res.success) {
       console.log("Login correcto");
-      router.push("./homeCliente");  // Cambia a tu pantalla real
+      router.push("./homeCliente");
     } else {
-      Alert.alert("Error", res.message || "Credenciales incorrectas");
+      Alert.alert("Error", res.error?.message || "Credenciales incorrectas");
     }
   };
 
@@ -72,7 +72,14 @@ export default function LoginCliente() {
               width: "50%",
               height: 2,
               backgroundColor: "#2D6FF7",
-              transform: [{ translateX: underlineAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 180] }) }],
+              transform: [
+                { 
+                  translateX: underlineAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, 180],
+                  })
+                }
+              ],
             }}
           />
         </View>

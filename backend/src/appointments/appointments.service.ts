@@ -10,23 +10,34 @@ import { Service } from 'src/services/service.entity';
 export class AppointmentsService {
   constructor(
     @InjectRepository(Appointment)
-    private repo: Repository<Appointment>,
+    private readonly repo: Repository<Appointment>,
 
     @InjectRepository(User)
-    private usersRepo: Repository<User>,
+    private readonly usersRepo: Repository<User>,
 
     @InjectRepository(Barber)
-    private barbersRepo: Repository<Barber>,
+    private readonly barbersRepo: Repository<Barber>,
 
     @InjectRepository(Service)
-    private servicesRepo: Repository<Service>,
+    private readonly servicesRepo: Repository<Service>,
   ) {}
 
-  // Crear cita
+  // ==========================================
+  // 📌 CREAR CITA — con clienteId del JWT
+  // ==========================================
   async create(data: any) {
-    const cliente = await this.usersRepo.findOne({ where: { id: data.id_cliente } });
-    const barbero = await this.barbersRepo.findOne({ where: { id: data.id_barbero } });
-    const servicio = await this.servicesRepo.findOne({ where: { id: data.id_servicio } });
+    // data.clienteId viene del JWT
+    const cliente = await this.usersRepo.findOne({
+      where: { id: data.clienteId },
+    });
+
+    const barbero = await this.barbersRepo.findOne({
+      where: { id: data.id_barbero },
+    });
+
+    const servicio = await this.servicesRepo.findOne({
+      where: { id: data.id_servicio },
+    });
 
     if (!cliente) throw new NotFoundException('Cliente no encontrado');
     if (!barbero) throw new NotFoundException('Barbero no encontrado');
@@ -45,25 +56,31 @@ export class AppointmentsService {
     return this.repo.save(cita);
   }
 
-  // Obtener todas las citas por cliente
-  async findByCliente(id_cliente: number) {
+  // ==========================================
+  // 📌 CITAS DE UN CLIENTE
+  // ==========================================
+  async findByCliente(clienteId: number) {
     return this.repo.find({
-      where: { cliente: { id: id_cliente } },
+      where: { cliente: { id: clienteId } },
       relations: ['barbero', 'servicio'],
       order: { fecha: 'ASC' },
     });
   }
 
-  // Obtener todas las citas por barbero
-  async findByBarbero(id_barbero: number) {
+  // ==========================================
+  // 📌 CITAS DE UN BARBERO
+  // ==========================================
+  async findByBarbero(barberoId: number) {
     return this.repo.find({
-      where: { barbero: { id: id_barbero } },
+      where: { barbero: { id: barberoId } },
       relations: ['cliente', 'servicio'],
       order: { fecha: 'ASC' },
     });
   }
 
-  // Obtener una cita por ID
+  // ==========================================
+  // 📌 OBTENER UNA CITA POR ID
+  // ==========================================
   async findOne(id: number) {
     const cita = await this.repo.findOne({
       where: { id },
@@ -74,14 +91,18 @@ export class AppointmentsService {
     return cita;
   }
 
-  // Cambiar estado: pendiente / completada / cancelada
+  // ==========================================
+  // 📌 CAMBIAR ESTADO
+  // ==========================================
   async updateEstado(id: number, estado: string) {
     const cita = await this.findOne(id);
     cita.estado = estado;
     return this.repo.save(cita);
   }
 
-  // Eliminar cita
+  // ==========================================
+  // 📌 ELIMINAR CITA
+  // ==========================================
   async remove(id: number) {
     const cita = await this.findOne(id);
     return this.repo.remove(cita);
