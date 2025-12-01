@@ -4,7 +4,7 @@ import { saveToken, saveUsuario } from "../utils/authStorage";
 
 export const useAuthViewModel = () => {
   const [loading, setLoading] = useState(false);
-  const API_URL = "http://192.168.1.32:3000";
+  const API_URL = "http://192.168.80.14:3000";
 
   // -----------------------
   // REGISTRO
