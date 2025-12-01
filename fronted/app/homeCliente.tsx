@@ -26,8 +26,8 @@ export default function HomeCliente() {
   const navigation = useNavigation<Nav>();
 
   // 🔥 BACKEND: Cambiar IP cuando sea necesario
-  const API_URL = "http://192.168.80.14:3000";
-  //const API_URL = "http://192.168.1.32:3000" API Juanito"
+  //const API_URL = "http://192.168.80.14:3000";
+  const API_URL = "http://192.168.1.32:3000" //API Juanito"
 
   // 🔥 Usuario logueado
   const [usuario, setUsuario] = useState<any>(null);

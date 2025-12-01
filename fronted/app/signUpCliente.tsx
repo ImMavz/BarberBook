@@ -1,115 +1,195 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Animated } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  Platform,
+  Image,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { Picker } from "@react-native-picker/picker";
+
 import InputField from "../components/ui/inputField";
 import Button from "../components/ui/button";
 import { useAuthViewModel } from "../viewmodel/authViewModel";
 import { useRouter } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
 
-export default function SignUpCliente() {
+export default function SignUp() {
   const router = useRouter();
   const { register, loading } = useAuthViewModel();
 
-  const [activeTab, setActiveTab] = useState<"cliente" | "dueno">("cliente");
-  const [underlineAnim] = useState(new Animated.Value(0));
-
-  // Campos cliente
   const [nombre, setNombre] = useState("");
-  const [email, setEmail] = useState("");
+  const [correo, setCorreo] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSwitch = (tab: "cliente" | "dueno") => {
-    setActiveTab(tab);
-    Animated.timing(underlineAnim, {
-      toValue: tab === "cliente" ? 0 : 1,
-      duration: 250,
-      useNativeDriver: false,
-    }).start();
-
-    if (tab === "dueno") {
-      router.push("./signUpDueno");
-    }
-  };
+  const [rol, setRol] = useState<"cliente" | "barbero" | "dueño">("cliente");
 
   const handleRegister = async () => {
+    if (!nombre || !correo || !password || !rol) {
+      Alert.alert("Error", "Todos los campos son obligatorios");
+      return;
+    }
+
     const user = {
       nombre,
-      correo: email,
+      correo,
       contraseña: password,
-      rol: "cliente",
+      rol,
     };
 
     const res = await register(user);
 
     if (res.success) {
-      alert("Usuario creado con éxito 🎉");
-      router.push("./loginCliente");
+      Alert.alert("Usuario creado con éxito 🎉");
+      router.push("/loginCliente"); // tu login unificado
     } else {
-      alert("Error: " + JSON.stringify(res.error));
+      Alert.alert("Error", JSON.stringify(res.error));
     }
   };
 
   return (
     <LinearGradient
-      colors={["#35373D", "#42454C", "#4F535B", "#8E94A3"]}
-      start={{ x: 0.5, y: 0 }}
-      end={{ x: 0.5, y: 1 }}
-      style={styles.container}
+      colors={["#2B2D42", "#3B3D4D", "#50525D", "#7A7E8A"]}
+      style={styles.gradient}
     >
-      <Text style={styles.title}>BarberBook</Text>
-      <Text style={styles.subtitle}>Agenda tus cortes</Text>
-
-      <View style={styles.card}>
-        <View style={styles.tabContainer}>
-          <TouchableOpacity style={{ flex: 1, alignItems: "center" }} onPress={() => handleSwitch("cliente")}>
-            <Text style={[styles.tabText, activeTab === "cliente" && styles.activeTab]}>Cliente</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={{ flex: 1, alignItems: "center" }} onPress={() => handleSwitch("dueno")}>
-            <Text style={[styles.tabText, activeTab === "dueno" && styles.activeTab]}>Dueño</Text>
-          </TouchableOpacity>
-
-          <Animated.View
-            style={{
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              width: "50%",
-              height: 2,
-              backgroundColor: "#2D6FF7",
-              transform: [{ translateX: underlineAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 180] }) }],
-            }}
+      <KeyboardAwareScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        enableOnAndroid
+        extraScrollHeight={20}
+        extraHeight={120}
+      >
+        {/* LOGO */}
+        <View style={styles.logoContainer}>
+          <Image
+            source={require("../assets/images/logo.png")}
+            style={styles.logo}
+            resizeMode="contain"
           />
+          <Text style={styles.title}>Crear cuenta</Text>
+          <Text style={styles.subtitle}>Únete a BarberBook</Text>
         </View>
 
-        <InputField placeholder="Nombre" value={nombre} onChangeText={setNombre} />
-        <InputField placeholder="Correo electrónico" value={email} onChangeText={setEmail} />
-        <InputField placeholder="Contraseña" secureTextEntry value={password} onChangeText={setPassword} />
+        {/* CARD */}
+        <View style={styles.card}>
+          <InputField
+            placeholder="Nombre completo"
+            value={nombre}
+            onChangeText={setNombre}
+          />
 
-        <Button title={loading ? "Cargando..." : "Registrarse"} onPress={handleRegister} disabled={loading} />
+          <InputField
+            placeholder="Correo electrónico"
+            value={correo}
+            onChangeText={setCorreo}
+          />
 
-        <TouchableOpacity onPress={() => router.push("./loginCliente")}>
-          <Text style={styles.link}>¿Ya tienes una cuenta? ¡Inicia sesión!</Text>
-        </TouchableOpacity>
-      </View>
+          <InputField
+            placeholder="Contraseña"
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+          />
+
+          {/* SELECTOR DE ROL */}
+          <Text style={styles.label}>Registrarme como</Text>
+
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={rol}
+              onValueChange={(value) =>
+                setRol(value as "cliente" | "barbero" | "dueño")
+              }
+              style={styles.picker}
+            >
+              <Picker.Item label="Cliente" value="cliente" />
+              <Picker.Item label="Barbero" value="barbero" />
+              <Picker.Item label="Dueño" value="dueño" />
+            </Picker>
+          </View>
+
+          <Button
+            title={loading ? "Registrando..." : "Registrarse"}
+            onPress={handleRegister}
+            disabled={loading}
+          />
+
+          <TouchableOpacity onPress={() => router.push("/loginCliente")}>
+            <Text style={styles.link}>¿Ya tienes cuenta? Inicia sesión</Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAwareScrollView>
     </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", padding: 20 },
-  title: { fontSize: 28, fontWeight: "bold", textAlign: "center", color: "#fff" },
-  subtitle: { fontSize: 16, textAlign: "center", marginBottom: 20, color: "#fff" },
+  gradient: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+    padding: 22,
+  },
+
+  // LOGO
+  logoContainer: {
+    alignItems: "center",
+    marginBottom: 25,
+  },
+  logo: {
+    width: 120,
+    height: 120,
+    marginBottom: 10,
+  },
+  title: {
+    fontSize: 30,
+    color: "#fff",
+    fontWeight: "700",
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "#e3e3e3",
+    marginTop: 4,
+  },
+
+  // CARD
   card: {
     backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 18,
+    padding: 24,
     shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 5,
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  link: { color: "#2D6FF7", textAlign: "center", marginTop: 12 },
-  tabContainer: { flexDirection: "row", marginBottom: 20, position: "relative" },
-  tabText: { fontWeight: "bold", color: "#999" },
-  activeTab: { color: "#2D6FF7" },
+
+  label: {
+    marginTop: 10,
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#444",
+  },
+
+  pickerContainer: {
+    backgroundColor: "#f1f1f1",
+    borderRadius: 12,
+    marginTop: 6,
+    marginBottom: 16,
+  },
+
+  picker: {
+    height: 50,
+    width: "100%",
+  },
+
+  link: {
+    color: "#2D6FF7",
+    textAlign: "center",
+    marginTop: 15,
+  },
 });

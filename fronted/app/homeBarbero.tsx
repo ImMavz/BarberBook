@@ -1,54 +1,68 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
-import { Ionicons, MaterialCommunityIcons, Feather } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
+import axios from "axios";
 import { useNavigation } from "@react-navigation/native";
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-
-type RootStackParamList = {
-  homeBarbero: undefined;
-  citasAgendadas: undefined;
-  historialCitasBarbero: undefined;
-  estadisticas: undefined;
-};
-
-type Nav = NativeStackNavigationProp<RootStackParamList>;
-
+import { getUsuario, getToken } from "../utils/authStorage";
 
 export default function HomeBarbero() {
-  
-  // Cambiar para conectar al backend
-  const [citasHoy, setCitasHoy] = useState(8);
-  const [ganancias, setGanancias] = useState(206000);
-  const [calificacion, setCalificacion] = useState(4.8);
-  const [citasAgendadas, setCitasAgendadas] = useState(8);
+  const navigation = useNavigation();
 
-  const [actividadReciente, setActividadReciente] = useState([
-    {
-      id: 1,
-      nombre: "Joseph",
-      descripcion: "Corte de pelo - $20k",
-      hace: "Hace: 2h",
-      foto: "https://i.pravatar.cc/150?img=32"
-    },
-    {
-      id: 2,
-      nombre: "Cesar",
-      descripcion: "Barba - $10k",
-      hace: "Hace: 4h",
-      foto: "https://i.pravatar.cc/150?img=12",
-      completado: true
-    },
-    {
-      id: 3,
-      nombre: "Samuel",
-      descripcion: "Agendado para el 12 de septiembre 4pm - Corte de pelo",
-      hace: "Hace: 2m",
-      foto: "https://i.pravatar.cc/150?img=5"
+  const API_URL = "http://192.168.1.32:3000";
+
+  const [barbero, setBarbero] = useState<any>(null);
+  const [citasHoy, setCitasHoy] = useState(0);
+  const [ganancias, setGanancias] = useState(0);
+  const [calificacion] = useState(4.8);
+  const [actividadReciente, setActividadReciente] = useState([]);
+
+  // ============================
+  // 📌 CARGAR DATOS DEL BARBERO
+  // ============================
+  const cargarBarbero = async () => {
+    try {
+      const token = await getToken();
+      if (!token) return;
+
+      const res = await axios.get(`${API_URL}/barbers/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const data = res.data;
+      setBarbero(data);
+
+      // --- CITAS DE HOY ---
+      const hoy = new Date().toISOString().split("T")[0];
+      const citasDeHoy = data.citas.filter((c: any) => c.fecha === hoy);
+      setCitasHoy(citasDeHoy.length);
+
+      // --- GANANCIAS ---
+      const total = citasDeHoy.reduce((acc: number, c: any) => acc + (c.servicio?.precio || 0), 0);
+      setGanancias(total);
+
+      // --- ACTIVIDAD RECIENTE (últimas 5 citas) ---
+      const recientes = data.citas
+        .sort((a: any, b: any) => new Date(`${b.fecha}T${b.horaInicio}`).getTime() - new Date(`${a.fecha}T${a.horaInicio}`).getTime())
+        .slice(0, 5)
+        .map((c: any) => ({
+          id: c.id,
+          nombre: c.cliente.nombre,
+          descripcion: `${c.servicio?.nombre} - $${c.servicio?.precio}`,
+          hace: c.fecha,
+          foto: c.cliente.fotoPerfil || "https://i.pravatar.cc/150?img=5",
+          completado: c.estado === "completada",
+        }));
+
+      setActividadReciente(recientes);
+
+    } catch (err: any) {
+      console.log("❌ Error cargando info barbero:", err.response?.data || err.message);
     }
-  ]);
+  };
 
-  const navigation = useNavigation<Nav>();
-
+  useEffect(() => {
+    cargarBarbero();
+  }, []);
 
   return (
     <ScrollView style={styles.container}>
@@ -56,12 +70,12 @@ export default function HomeBarbero() {
       {/* HEADER */}
       <View style={styles.header}>
         <Image
-          source={{ uri: "https://i.pravatar.cc/150?img=1" }}
+          source={{ uri: barbero?.fotoPerfil || "https://i.pravatar.cc/150?img=1" }}
           style={styles.avatar}
         />
-        <View style={{ marginLeft: 10}}>
-          <Text style={styles.barberName}>Donde dieguito</Text>
-          <Text style={styles.welcome}>Bienvenido, Samuel</Text>
+        <View style={{ marginLeft: 10 }}>
+          <Text style={styles.barberName}>{barbero?.barberia?.nombre || "Mi Barbería"}</Text>
+          <Text style={styles.welcome}>Bienvenido, {barbero?.usuario?.nombre}</Text>
         </View>
 
         <TouchableOpacity style={{ marginLeft: "auto" }}>
@@ -73,95 +87,60 @@ export default function HomeBarbero() {
       <View style={styles.statsRow}>
         <View style={[styles.statBox, { backgroundColor: "#f1ecfc" }]}>
           <Text style={styles.statNumber}>{citasHoy}</Text>
-          <Text style={styles.statLabel}>Citas para hoy</Text>
+          <Text style={styles.statLabel}>Citas hoy</Text>
         </View>
 
         <View style={[styles.statBox, { backgroundColor: "#e8f9ec" }]}>
-          <Text style={styles.statNumber}>${ganancias / 1000}k</Text>
+          <Text style={styles.statNumber}>${ganancias}</Text>
           <Text style={styles.statLabel}>Ganancias</Text>
         </View>
 
         <View style={[styles.statBox, { backgroundColor: "#fff5e6" }]}>
           <Text style={styles.statNumber}>{calificacion}</Text>
-          <Text style={styles.statLabel}>Calificación</Text>
+          <Text style={styles.statLabel}>Rating</Text>
         </View>
       </View>
 
-      {/* PANEL DE OPCIONES */}
-        {/* GRID PRINCIPAL: 2 ARRIBA – 1 ABAJO */}
-        <View style={{ width: "100%", paddingHorizontal: 16, marginTop: 20 }}>
-
-        {/* FILA SUPERIOR → 2 TARJETAS */}
-        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-            
-            {/* Citas Agendadas */}
-            <TouchableOpacity onPress={() => navigation.navigate("citasAgendadas")}
-            style={{
-                width: "48%",
-                backgroundColor: "#fff",
-                paddingVertical: 24,
-                borderRadius: 20,
-                alignItems: "center",
-                elevation: 3,
-            }}
-            >
-            <Ionicons name="calendar" size={36} color="#6A5AE0" />
-            <Text style={{ marginTop: 10, fontSize: 18, fontWeight: "600" }}>
-                Citas Agendadas
-            </Text>
-            <Text style={{ marginTop: 4, color: "#777" }}>{citasHoy} Hoy</Text>
-            </TouchableOpacity>
-
-            {/* Historial */}
-            <TouchableOpacity onPress={() => navigation.navigate("historialCitasBarbero")}
-            style={{
-                width: "48%",
-                backgroundColor: "#fff",
-                paddingVertical: 24,
-                borderRadius: 20,
-                alignItems: "center",
-                elevation: 3,
-            }}
-            >
-            <Ionicons name="refresh" size={36} color="#3ECF8E" />
-            <Text style={{ marginTop: 10, fontSize: 18, fontWeight: "600" }}>
-                Historial
-            </Text>
-            <Text style={{ marginTop: 4, color: "#777" }}>Citas pasadas</Text>
-            </TouchableOpacity>
-
-        </View>
-
-        {/* TARJETA INFERIOR -> ESTADÍSTICAS */}
-        <TouchableOpacity onPress={() => navigation.navigate("estadisticas")}
-            style={{
-            width: "100%",
-            backgroundColor: "#fff",
-            paddingVertical: 24,
-            borderRadius: 20,
-            alignItems: "flex-start",
-            elevation: 3,
-            marginTop: 18,
-            paddingHorizontal: 20,
-            flexDirection: "row",
-            justifyContent: "space-between",
-            }}
+      {/* OPCIONES */}
+      <View style={{ width: "100%", paddingHorizontal: 16, marginTop: 20 }}>
+        
+        {/* Citas agendadas */}
+        <TouchableOpacity
+          onPress={() => navigation.navigate("citasAgendadas")}
+          style={styles.cardOption}
         >
-            <View>
-            <Text style={{ fontSize: 18, fontWeight: "600" }}>Estadísticas</Text>
-            <Text style={{ marginTop: 4, color: "#777" }}>
-                Analíticas del negocio
-            </Text>
-            </View>
-
-            <Ionicons name="chevron-forward" size={26} color="#777" />
+          <Ionicons name="calendar" size={36} color="#6A5AE0" />
+          <Text style={styles.cardTitle}>Citas agendadas</Text>
+          <Text style={styles.cardSubtitle}>{citasHoy} Hoy</Text>
         </TouchableOpacity>
-        </View>
+
+        {/* Historial */}
+        <TouchableOpacity
+          onPress={() => navigation.navigate("historialCitasBarbero")}
+          style={styles.cardOption}
+        >
+          <Ionicons name="refresh" size={36} color="#3ECF8E" />
+          <Text style={styles.cardTitle}>Historial</Text>
+          <Text style={styles.cardSubtitle}>Citas completadas</Text>
+        </TouchableOpacity>
+
+        {/* Estadísticas */}
+        <TouchableOpacity
+          onPress={() => navigation.navigate("estadisticas")}
+          style={styles.statsCard}
+        >
+          <View>
+            <Text style={styles.cardTitle}>Estadísticas</Text>
+            <Text style={styles.cardSubtitle}>Analíticas del barbero</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={26} color="#777" />
+        </TouchableOpacity>
+      </View>
 
       {/* ACTIVIDAD RECIENTE */}
       <Text style={styles.sectionTitle}>Actividad reciente</Text>
 
-      {actividadReciente.map((item) => (
+      {actividadReciente.map((item: any) => (
         <View key={item.id} style={styles.activityItem}>
           <Image source={{ uri: item.foto }} style={styles.activityAvatar} />
 
@@ -171,81 +150,53 @@ export default function HomeBarbero() {
           </View>
 
           {item.completado && (
-            <Ionicons name="checkmark" size={26} color="green" style={{ marginRight: 6 }} />
+            <Ionicons name="checkmark" size={26} color="green" />
           )}
 
           <Text style={styles.activityTime}>{item.hace}</Text>
         </View>
       ))}
 
-      <View style={{ height: 30 }} />
+      <View style={{ height: 40 }} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 20,
-    backgroundColor: "#f5f6f8",
-  },
+  container: { paddingHorizontal: 20, backgroundColor: "#f5f6f8" },
+  header: { flexDirection: "row", alignItems: "center", paddingVertical: 40 },
+  avatar: { width: 55, height: 55, borderRadius: 50 },
+  barberName: { fontSize: 20, fontWeight: "700" },
+  welcome: { fontSize: 14, color: "#666" },
 
-  header: {
-    flexDirection: "row",
+  statsRow: { flexDirection: "row", justifyContent: "space-between" },
+  statBox: { width: "32%", padding: 15, borderRadius: 12, alignItems: "center" },
+  statNumber: { fontSize: 22, fontWeight: "700" },
+  statLabel: { fontSize: 12, color: "#666" },
+
+  cardOption: {
+    width: "48%",
+    backgroundColor: "#fff",
+    paddingVertical: 24,
+    borderRadius: 20,
     alignItems: "center",
-    paddingVertical: 40,
+    elevation: 3,
+    marginBottom: 16,
   },
-  avatar: {
-    width: 55,
-    height: 55,
-    borderRadius: 50,
-  },
-  barberName: {
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  welcome: {
-    fontSize: 14,
-    color: "#666",
-  },
+  cardTitle: { marginTop: 10, fontSize: 18, fontWeight: "600" },
+  cardSubtitle: { marginTop: 4, color: "#777", fontSize: 12 },
 
-  statsRow: {
+  statsCard: {
+    width: "100%",
+    backgroundColor: "#fff",
+    paddingVertical: 24,
+    borderRadius: 20,
+    alignItems: "flex-start",
+    elevation: 3,
+    marginTop: 18,
+    paddingHorizontal: 20,
     flexDirection: "row",
     justifyContent: "space-between",
-  },
-  statBox: {
-    width: "32%",
-    padding: 15,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  statNumber: {
-    fontSize: 22,
-    fontWeight: "700",
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: "#666",
-  },
-
-  optionsContainer: {
-    marginTop: 25,
-  },
-  optionBox: {
-    backgroundColor: "white",
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 15,
-  },
-  optionTitle: {
-    marginTop: 10,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  optionSubtitle: {
-    fontSize: 12,
-    color: "#777",
-    marginTop: 3,
   },
 
   sectionTitle: {
@@ -263,23 +214,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     alignItems: "center",
   },
-  activityAvatar: {
-    width: 45,
-    height: 45,
-    borderRadius: 50,
-  },
-  activityName: {
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  activityDesc: {
-    fontSize: 12,
-    color: "#666",
-    marginTop: 2,
-  },
-  activityTime: {
-    fontSize: 11,
-    color: "#aaa",
-    marginLeft: 10,
-  },
+  activityAvatar: { width: 45, height: 45, borderRadius: 50 },
+  activityName: { fontSize: 15, fontWeight: "600" },
+  activityDesc: { fontSize: 12, color: "#666" },
+  activityTime: { fontSize: 11, color: "#aaa" },
 });

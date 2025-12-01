@@ -1,33 +1,27 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Alert } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  Image,
+  Platform,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+
 import InputField from "../components/ui/inputField";
 import Button from "../components/ui/button";
 import { useAuthViewModel } from "../viewmodel/authViewModel";
 import { useRouter } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
 
-export default function LoginCliente() {
+export default function Login() {
   const router = useRouter();
   const { login } = useAuthViewModel();
 
-  const [activeTab, setActiveTab] = useState<"cliente" | "dueno">("cliente");
-  const [underlineAnim] = useState(new Animated.Value(0));
-
-  const [identifier, setIdentifier] = useState(""); 
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
-
-  const handleSwitch = (tab: "cliente" | "dueno") => {
-    setActiveTab(tab);
-    Animated.timing(underlineAnim, {
-      toValue: tab === "cliente" ? 0 : 1,
-      duration: 250,
-      useNativeDriver: false,
-    }).start();
-
-    if (tab === "dueno") {
-      router.push("./loginDueno");
-    }
-  };
 
   const handleLogin = async () => {
     if (!identifier || !password) {
@@ -37,92 +31,124 @@ export default function LoginCliente() {
 
     const res = await login(identifier, password);
 
-    if (res.success) {
-      console.log("Login correcto");
-      router.push("./homeCliente");
-    } else {
+    if (!res.success) {
       Alert.alert("Error", res.error?.message || "Credenciales incorrectas");
+      return;
     }
+
+    console.log("Login correcto", res.data);
+
+    const rol = res.data.usuario.rol;
+
+    // 🔥 Redirección dependiendo del rol
+    if (rol === "cliente") router.push("/homeCliente");
+    if (rol === "barbero") router.push("/homeBarbero");
+    if (rol === "dueño") router.push("/homeDueno");
   };
 
   return (
     <LinearGradient
-      colors={["#35373D", "#42454C", "#4F535B", "#8E94A3"]}
-      start={{ x: 0.5, y: 0 }}
-      end={{ x: 0.5, y: 1 }}
-      style={styles.container}
+      colors={["#2B2D42", "#3B3D4D", "#50525D", "#7A7E8A"]}
+      style={styles.gradient}
     >
-      <Text style={styles.title}>BarberBook</Text>
-      <Text style={styles.subtitle}>Agenda tus cortes</Text>
-
-      <View style={styles.card}>
-        <View style={styles.tabContainer}>
-          <TouchableOpacity style={{ flex: 1, alignItems: "center" }} onPress={() => handleSwitch("cliente")}>
-            <Text style={[styles.tabText, activeTab === "cliente" && styles.activeTab]}>Cliente</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={{ flex: 1, alignItems: "center" }} onPress={() => handleSwitch("dueno")}>
-            <Text style={[styles.tabText, activeTab === "dueno" && styles.activeTab]}>Dueño</Text>
-          </TouchableOpacity>
-
-          <Animated.View
-            style={{
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              width: "50%",
-              height: 2,
-              backgroundColor: "#2D6FF7",
-              transform: [
-                { 
-                  translateX: underlineAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0, 180],
-                  })
-                }
-              ],
-            }}
+      <KeyboardAwareScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        enableOnAndroid={true}
+        extraScrollHeight={20}
+        extraHeight={100}
+      >
+        {/* LOGO */}
+        <View style={styles.logoContainer}>
+          <Image
+            source={require("../assets/images/logo.png")}
+            style={styles.logo}
+            resizeMode="contain"
           />
+          <Text style={styles.title}>BarberBook</Text>
+          <Text style={styles.subtitle}>Tu look, siempre a tiempo</Text>
         </View>
 
-        <InputField 
-          placeholder="Correo o Cédula"
-          value={identifier} 
-          onChangeText={setIdentifier} 
-        />
-        <InputField 
-          placeholder="Contraseña" 
-          secureTextEntry 
-          value={password} 
-          onChangeText={setPassword} 
-        />
+        {/* CARD */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Iniciar sesión</Text>
 
-        <Button title="Iniciar sesión" onPress={handleLogin} />
+          <InputField
+            placeholder="Correo o Cédula"
+            value={identifier}
+            onChangeText={setIdentifier}
+          />
 
-        <TouchableOpacity onPress={() => router.push("./signUpCliente")}>
-          <Text style={styles.link}>¿No tienes cuenta? ¡Regístrate!</Text>
-        </TouchableOpacity>
-      </View>
+          <InputField
+            placeholder="Contraseña"
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+          />
+
+          <Button title="Ingresar" onPress={handleLogin} />
+
+          <TouchableOpacity onPress={() => router.push("/signUpCliente")}>
+            <Text style={styles.link}>¿No tienes cuenta? Regístrate aquí</Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAwareScrollView>
     </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", padding: 20 },
-  title: { fontSize: 28, fontWeight: "bold", textAlign: "center", color: "#fff" },
-  subtitle: { fontSize: 16, textAlign: "center", marginBottom: 20, color: "#fff" },
-
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 5,
+  gradient: {
+    flex: 1,
   },
 
-  link: { color: "#2D6FF7", textAlign: "center", marginTop: 12 },
-  tabContainer: { flexDirection: "row", marginBottom: 20, position: "relative" },
-  tabText: { fontWeight: "bold", color: "#999" },
-  activeTab: { color: "#2D6FF7" },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+    padding: 22,
+  },
+
+  // LOGO
+  logoContainer: {
+    alignItems: "center",
+    marginBottom: 25,
+  },
+  logo: {
+    width: 120,
+    height: 120,
+    marginBottom: 10,
+  },
+  title: {
+    fontSize: 32,
+    color: "#fff",
+    fontWeight: "700",
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "#e3e3e3",
+    marginTop: 4,
+  },
+
+  // CARD
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 18,
+    padding: 24,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  cardTitle: {
+    fontSize: 22,
+    fontWeight: "600",
+    marginBottom: 15,
+    textAlign: "center",
+  },
+
+  link: {
+    color: "#2D6FF7",
+    textAlign: "center",
+    marginTop: 15,
+  },
 });
