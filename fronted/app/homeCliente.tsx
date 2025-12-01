@@ -1,290 +1,226 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import React, { useState } from "react";
+import {View, Text, Image, TextInput, TouchableOpacity, ScrollView, StyleSheet, } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import axios from "axios";
-import { useNavigation } from "@react-navigation/native";
-import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-
-type RootStackParamList = {
-  agendarCita: undefined;
-  misCitas: undefined;
-  historialCliente: undefined;
-  homeCliente: undefined;
-};
-
-type Nav = NativeStackNavigationProp<RootStackParamList>;
+import { useNavigation, NavigationProp } from "@react-navigation/native";
 
 export default function HomeCliente() {
-  const navigation = useNavigation<Nav>();
+  const navigation = useNavigation<NavigationProp<any>>();
 
-  // 👉 Cambia IP por la tuya
-  const API_URL = "http://192.168.1.32:3000";
-
-  // 👉 Luego esto vendrá del login
-  const CLIENTE_ID = 1;
-
-  const [proximaCita, setProximaCita] = useState<string | null>(null);
-
-  const [barberosSugeridos, setBarberosSugeridos] = useState([
-    { id: 1, nombre: "Carlos Barbero", especialidad: "Cortes - Degradados", foto: "https://i.pravatar.cc/150?img=12" },
-    { id: 2, nombre: "David Barber", especialidad: "Barba + Corte", foto: "https://i.pravatar.cc/150?img=5" },
-  ]);
-
-  const [actividadReciente, setActividadReciente] = useState([
+  // 🔥 Cuando conectes backend, reemplaza estos datos aquí:
+  const [citasAgendadas] = useState<
+    {
+      id: number;
+      barberia: string;
+      descripcion: string;
+      hace: string;
+      icon: React.ComponentProps<typeof Ionicons>["name"];
+    }[]
+  >([
     {
       id: 1,
-      descripcion: "Recordatorio de cita para mañana a las 10am",
-      hace: "Hace 1h",
-      icono: "notifications-outline",
-    },
-    {
-      id: 2,
-      descripcion: "Tuviste una cita con Carlos - Corte básico",
-      hace: "Ayer",
-      icono: "cut-outline",
+      barberia: "Donde dieguito",
+      descripcion: "Corte de pelo - $20k",
+      hace: "Hace: 2h",
+      icon: "cut-outline",
     },
   ]);
 
-  // =============================
-  // 👉 FUNCIÓN PARA CARGAR CITAS
-  // =============================
-  const cargarCitas = async () => {
-    try {
-      const res = await axios.get(`${API_URL}/appointments/cliente/${CLIENTE_ID}`);
-
-      if (!res.data || res.data.length === 0) {
-        setProximaCita(null);
-        return;
-      }
-
-      // Ordenar por fecha + horaInicio
-      const ordenadas = res.data.sort((a: any, b: any) => {
-        const fechaA = new Date(`${a.fecha}T${a.horaInicio}`);
-        const fechaB = new Date(`${b.fecha}T${b.horaInicio}`);
-        return fechaA.getTime() - fechaB.getTime();
-      });
-
-      const cita = ordenadas[0];
-      setProximaCita(`${cita.fecha} • ${cita.horaInicio}`);
-    } catch (err: any) {
-      console.log("❌ Error cargando citas:", err.response?.data || err.message);
-    }
-  };
-
-  // 👉 Cargar citas al abrir la pantalla
-  useEffect(() => {
-    cargarCitas();
-  }, []);
+  const [search, setSearch] = useState("");
 
   return (
     <ScrollView style={styles.container}>
-      
-      {/* HEADER */}
-      <View style={styles.header}>
-        <Image
-          source={{ uri: "https://i.pravatar.cc/150?img=1" }}
-          style={styles.avatar}
-        />
-        <View style={{ marginLeft: 10 }}>
-          <Text style={styles.clientName}>Hola, Juan</Text>
-          <Text style={styles.welcome}>Bienvenido a BarberBook</Text>
-        </View>
+      {/* HEADER SUPERIOR */}
+      <View style={styles.headerRow}>
+        <TouchableOpacity style={styles.logoBox}>
+          <Ionicons name="cut-outline" size={30} color="#2B69FF" />
+        </TouchableOpacity>
 
-        <TouchableOpacity style={{ marginLeft: "auto" }}>
-          <Ionicons name="settings-outline" size={26} color="#333" />
+        <TouchableOpacity
+          onPress={() => navigation.navigate("Historial" as never)}
+          style={styles.historialBtn}
+        >
+          <Text style={{ color: "#fff", fontWeight: "600" }}>📘 Historial</Text>
         </TouchableOpacity>
       </View>
 
-      {/* TARJETA PRÓXIMA CITA */}
-      <View style={styles.nextAppointmentBox}>
-        <Ionicons name="calendar-outline" size={36} color="#6A5AE0" />
-        <View style={{ marginLeft: 12 }}>
-          <Text style={{ fontSize: 16, fontWeight: "700" }}>Próxima cita</Text>
+      {/* PERFIL */}
+      <View style={styles.profileSection}>
+        <Image
+          source={{ uri: "https://i.pravatar.cc/150?img=40" }}
+          style={styles.avatar}
+        />
 
-          <Text style={{ marginTop: 4, color: "#555" }}>
-            {proximaCita ?? "No tienes citas próximas"}
+        <Text style={styles.welcome}>Bienvenido, Joseph</Text>
+        <Text style={styles.subText}>¡Agenda citas de manera sencilla!</Text>
+      </View>
+
+      {/* BUSCADOR */}
+      <TouchableOpacity
+        style={styles.searchBox}
+        onPress={() =>
+          navigation.navigate("buscarBarberia", { initialQuery: search })
+        }
+      >
+        <Ionicons name="search-outline" size={20} color="#888" />
+        <TextInput
+          placeholder="Busca peluquerías"
+          placeholderTextColor="#aaa"
+          style={styles.input}
+          value={search}
+          onChangeText={setSearch}
+        />
+      </TouchableOpacity>
+
+      {/* CITAS AGENDADAS */}
+      <Text style={styles.sectionTitle}>Citas agendadas</Text>
+
+      {citasAgendadas.map((cita) => (
+        <View key={cita.id} style={styles.citaCard}>
+          <Ionicons name={cita.icon} size={30} color="#2B69FF" />
+
+          <View style={{ flex: 1, marginLeft: 10 }}>
+            <Text style={styles.citaBarberia}>{cita.barberia}</Text>
+            <Text style={styles.citaDesc}>{cita.descripcion}</Text>
+          </View>
+
+          <Text style={styles.citaTime}>{cita.hace}</Text>
+        </View>
+      ))}
+
+      {/* COMO USAR BARBERBOOK */}
+      <Text style={styles.sectionTitle}>¿Cómo usar BarberBook?</Text>
+
+      <View style={styles.step}>
+        <View style={styles.stepNumber}>
+          <Text style={styles.stepNumberText}>1</Text>
+        </View>
+        <View>
+          <Text style={styles.stepTitle}>Busca una peluquería</Text>
+          <Text style={styles.stepDesc}>
+            Pon el nombre o ubicación de la peluquería en el buscador
           </Text>
         </View>
       </View>
 
-      {/* OPCIONES PRINCIPALES */}
-      <View style={styles.optionsGrid}>
-        
-        {/* AGENDAR CITA */}
-        <TouchableOpacity
-          style={styles.optionCard}
-          onPress={() => navigation.navigate("agendarCita")}
-        >
-          <Ionicons name="add-circle-outline" size={36} color="#6A5AE0" />
-          <Text style={styles.optionTitle}>Agendar cita</Text>
-          <Text style={styles.optionSubtitle}>Elige barbero y servicio</Text>
-        </TouchableOpacity>
-
-        {/* MIS CITAS */}
-        <TouchableOpacity
-          style={styles.optionCard}
-          onPress={() => navigation.navigate("misCitas")}
-        >
-          <Ionicons name="calendar-clear-outline" size={36} color="#3ECF8E" />
-          <Text style={styles.optionTitle}>Mis citas</Text>
-          <Text style={styles.optionSubtitle}>Próximas y pendientes</Text>
-        </TouchableOpacity>
-
-        {/* HISTORIAL */}
-        <TouchableOpacity
-          style={[styles.optionCard, { width: "100%" }]}
-          onPress={() => navigation.navigate("historialCliente")}
-        >
-          <Ionicons name="time-outline" size={36} color="#F7A325" />
-          <Text style={styles.optionTitle}>Historial</Text>
-          <Text style={styles.optionSubtitle}>Tus servicios anteriores</Text>
-        </TouchableOpacity>
-
+      <View style={styles.step}>
+        <View style={styles.stepNumber}>
+          <Text style={styles.stepNumberText}>2</Text>
+        </View>
+        <View>
+          <Text style={styles.stepTitle}>Escoge el servicio</Text>
+          <Text style={styles.stepDesc}>
+            Selecciona el servicio disponible que tengan disponible
+          </Text>
+        </View>
       </View>
 
-      {/* BARBEROS SUGERIDOS */}
-      <Text style={styles.sectionTitle}>Barberos sugeridos</Text>
-
-      {barberosSugeridos.map((b) => (
-        <View key={b.id} style={styles.barberItem}>
-          <Image source={{ uri: b.foto }} style={styles.barberAvatar} />
-
-          <View style={{ flex: 1, marginLeft: 12 }}>
-            <Text style={styles.barberName}>{b.nombre}</Text>
-            <Text style={styles.barberSpecialty}>{b.especialidad}</Text>
-          </View>
-
-          <Ionicons name="chevron-forward" size={24} color="#777" />
+      <View style={styles.step}>
+        <View style={styles.stepNumber}>
+          <Text style={styles.stepNumberText}>3</Text>
         </View>
-      ))}
-
-      {/* ACTIVIDAD RECIENTE */}
-      <Text style={styles.sectionTitle}>Actividad reciente</Text>
-
-      {actividadReciente.map((item) => (
-        <View key={item.id} style={styles.activityItem}>
-          <Ionicons name={item.icono as any} size={28} color="#6A5AE0" />
-
-          <View style={{ flex: 1, marginLeft: 10 }}>
-            <Text style={styles.activityDesc}>{item.descripcion}</Text>
-          </View>
-
-          <Text style={styles.activityTime}>{item.hace}</Text>
+        <View>
+          <Text style={styles.stepTitle}>Separa tu cita</Text>
+          <Text style={styles.stepDesc}>
+            Escoge el día y la hora, dale confirmar y listo!
+          </Text>
         </View>
-      ))}
+      </View>
 
       <View style={{ height: 40 }} />
-
     </ScrollView>
   );
 }
 
+// 🎨 ESTILOS EXACTOS
 const styles = StyleSheet.create({
-  container: {
+  container: { padding: 20, backgroundColor: "#F5F6FA", paddingTop: 30 },
+
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  logoBox: { padding: 5 },
+
+  historialBtn: {
+    backgroundColor: "#2B69FF",
     paddingHorizontal: 20,
-    backgroundColor: "#f5f6f8",
+    paddingVertical: 8,
+    borderRadius: 25,
   },
 
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 25,
-  },
-  avatar: {
-    width: 55,
-    height: 55,
-    borderRadius: 50,
-  },
-  clientName: {
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  welcome: {
-    fontSize: 14,
-    color: "#666",
-  },
-
-  nextAppointmentBox: {
-    flexDirection: "row",
-    backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 15,
-    alignItems: "center",
-    elevation: 3,
-  },
-
-  optionsGrid: {
+  profileSection: {
     marginTop: 20,
-  },
-
-  optionCard: {
-    backgroundColor: "#fff",
-    width: "48%",
-    paddingVertical: 24,
-    borderRadius: 20,
     alignItems: "center",
-    elevation: 3,
-    marginBottom: 16,
   },
 
-  optionTitle: {
-    marginTop: 10,
-    fontSize: 18,
-    fontWeight: "600",
+  avatar: { width: 80, height: 80, borderRadius: 50 },
+
+  welcome: { fontSize: 22, fontWeight: "700", marginTop: 10 },
+
+  subText: { color: "#777", marginTop: 4 },
+
+  searchBox: {
+    marginTop: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
-  optionSubtitle: {
-    marginTop: 4,
-    color: "#777",
-    fontSize: 12,
+
+  input: {
+    marginLeft: 8,
+    fontSize: 16,
+    width: "90%",
   },
 
   sectionTitle: {
     fontSize: 18,
     fontWeight: "700",
-    marginTop: 30,
-    marginBottom: 10,
+    marginTop: 25,
+    marginBottom: 12,
   },
 
-  barberItem: {
+  citaCard: {
     flexDirection: "row",
-    backgroundColor: "white",
-    padding: 12,
+    backgroundColor: "#fff",
+    padding: 14,
     borderRadius: 12,
-    marginBottom: 10,
     alignItems: "center",
-  },
-  barberAvatar: {
-    width: 45,
-    height: 45,
-    borderRadius: 50,
-  },
-  barberName: {
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  barberSpecialty: {
-    color: "#777",
-    marginTop: 2,
-    fontSize: 12,
+    marginBottom: 12,
   },
 
-  activityItem: {
+  citaBarberia: { fontWeight: "700", fontSize: 16 },
+
+  citaDesc: { color: "#666", marginTop: 2 },
+
+  citaTime: { fontSize: 12, color: "#777" },
+
+  step: {
     flexDirection: "row",
-    backgroundColor: "white",
-    padding: 12,
+    backgroundColor: "#fff",
+    padding: 14,
     borderRadius: 12,
     marginBottom: 12,
     alignItems: "center",
   },
 
-  activityDesc: {
-    fontSize: 12,
-    color: "#666",
+  stepNumber: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: "#2B69FF",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
   },
 
-  activityTime: {
-    fontSize: 11,
-    color: "#aaa",
-    marginLeft: 10,
-  },
+  stepNumberText: { color: "#fff", fontWeight: "700" },
+
+  stepTitle: { fontWeight: "700", fontSize: 16 },
+
+  stepDesc: { color: "#666", width: "85%" },
 });

@@ -12,6 +12,7 @@ export default function RootLayout() {
       <Stack.Screen name="settingsBarberShop"/>
       <Stack.Screen name="historialCitasBarbero"/>
       <Stack.Screen name="estadisticas"/>
+      <Stack.Screen name="homeCliente"/>
     </Stack>
   );
 }
