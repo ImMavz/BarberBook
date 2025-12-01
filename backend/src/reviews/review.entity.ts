@@ -11,8 +11,8 @@ export class Review {
   @Column()
   calificacion: number;
 
-  @Column({ nullable: true })
-  comentario: string;
+  @Column({ type: 'text', nullable: true })   // <<< CAMBIO CLAVE
+  comentario: string | null;
 
   @Column({ type: 'timestamp', default: () => 'now()' })
   fecha: Date;
@@ -23,9 +23,9 @@ export class Review {
 
   @ManyToOne(() => Barber, (barber) => barber.citas, { nullable: true })
   @JoinColumn({ name: 'id_barbero' })
-  barbero: Barber;
+  barbero: Barber | null;
 
   @ManyToOne(() => Barbershop, (barbershop) => barbershop.reseñas, { nullable: true })
   @JoinColumn({ name: 'id_barberia' })
-  barberia: Barbershop;
+  barberia: Barbershop | null;
 }

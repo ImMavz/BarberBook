@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { Repository, DeepPartial } from "typeorm";
 import { Review } from "./review.entity";
 import { CreateReviewDto } from "./dto/create-review.dto";
 import { UpdateReviewDto } from "./dto/update-review.dto";
@@ -45,32 +45,33 @@ export class ReviewsService {
     const cliente = await this.usersRepo.findOne({ where: { id: dto.clienteId } });
     if (!cliente) throw new NotFoundException("Cliente no encontrado");
 
-    let barbero = null;
+    let barbero: Barber | null = null;
     if (dto.barberoId) {
       barbero = await this.barbersRepo.findOne({ where: { id: dto.barberoId } });
-      if (!barbero) throw new NotFoundException("Barbero no encontrado");
     }
 
-    let barberia = null;
+    let barberia: Barbershop | null = null;
     if (dto.barberiaId) {
       barberia = await this.barbershopsRepo.findOne({ where: { id: dto.barberiaId } });
-      if (!barberia) throw new NotFoundException("Barbería no encontrada");
     }
 
-    const review = this.repo.create({
+    const payload: DeepPartial<Review> = {
       calificacion: dto.calificacion,
-      comentario: dto.comentario,
+      comentario: dto.comentario ?? null,
       cliente,
       barbero,
       barberia,
-    });
+    };
 
+    const review = this.repo.create(payload);
     return this.repo.save(review);
   }
 
   async update(id: number, dto: UpdateReviewDto) {
     const review = await this.findOne(id);
+
     Object.assign(review, dto);
+
     return this.repo.save(review);
   }
 

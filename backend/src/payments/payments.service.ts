@@ -10,19 +10,39 @@ import { Barber } from "src/barbers/barber.entity";
 export class PaymentsService {
   constructor(
     @InjectRepository(Payment)
-    private repo: Repository<Payment>,
+    private readonly repo: Repository<Payment>,
 
     @InjectRepository(Barber)
-    private barbersRepo: Repository<Barber>
+    private readonly barbersRepo: Repository<Barber>,
   ) {}
 
-  async findAll() {
+  // ➤ Crear un pago
+  async create(dto: CreatePaymentDto) {
+    const barber = await this.barbersRepo.findOne({
+      where: { id: dto.barberoId },
+    });
+
+    if (!barber) throw new NotFoundException("Barbero no encontrado");
+
+    const payment = this.repo.create({
+      monto: dto.monto,
+      estado: dto.estado,
+      metodo: dto.metodo ?? "",   // evita error si viene null
+      barbero: barber,
+    });
+
+    return this.repo.save(payment);
+  }
+
+  // ➤ Listar todos los pagos
+  findAll() {
     return this.repo.find({
       relations: ["barbero"],
-      order: { id: "DESC" },
+      order: { fechaPago: "DESC" },
     });
   }
 
+  // ➤ Obtener un pago por ID
   async findOne(id: number) {
     const payment = await this.repo.findOne({
       where: { id },
@@ -30,32 +50,31 @@ export class PaymentsService {
     });
 
     if (!payment) throw new NotFoundException("Pago no encontrado");
+
     return payment;
   }
 
-  async create(dto: CreatePaymentDto) {
-    const barbero = await this.barbersRepo.findOne({
-      where: { id: dto.barberoId },
-    });
-
-    if (!barbero) throw new NotFoundException("Barbero no encontrado");
-
-    const payment = this.repo.create({
-      monto: dto.monto,
-      estado: dto.estado,
-      metodo: dto.metodo ?? null,
-      barbero,
-    });
-
-    return this.repo.save(payment);
-  }
-
+  // ➤ Actualizar un pago
   async update(id: number, dto: UpdatePaymentDto) {
     const payment = await this.findOne(id);
-    Object.assign(payment, dto);
+
+    if (dto.barberoId) {
+      const barber = await this.barbersRepo.findOne({
+        where: { id: dto.barberoId },
+      });
+
+      if (!barber) throw new NotFoundException("Barbero no encontrado");
+      payment.barbero = barber;
+    }
+
+    if (dto.monto !== undefined) payment.monto = dto.monto;
+    if (dto.estado !== undefined) payment.estado = dto.estado;
+    if (dto.metodo !== undefined) payment.metodo = dto.metodo ?? "";
+
     return this.repo.save(payment);
   }
 
+  // ➤ Eliminar un pago
   async remove(id: number) {
     const payment = await this.findOne(id);
     return this.repo.remove(payment);

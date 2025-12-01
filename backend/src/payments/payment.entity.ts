@@ -15,8 +15,8 @@ export class Payment {
   @Column()
   estado: string;
 
-  @Column({ nullable: true })
-  metodo: string;
+  @Column({ type: 'varchar', nullable: true })
+  metodo: string | null;
 
   @ManyToOne(() => Barber, (barber) => barber.pagos)
   @JoinColumn({ name: 'id_barbero' })
