@@ -15,6 +15,7 @@ import InputField from "../components/ui/inputField";
 import Button from "../components/ui/button";
 import { useAuthViewModel } from "../viewmodel/authViewModel";
 import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Login() {
   const router = useRouter();
@@ -38,12 +39,19 @@ export default function Login() {
 
     console.log("Login correcto", res.data);
 
-    const rol = res.data.usuario.rol;
+    const data = res.data; // ✔️ ahora sí existe
+    const rol = data.usuario.rol;
+
+    // ✔️ Guardar token correctamente
+    await AsyncStorage.setItem("token", data.access_token);
+
+    // ✔️ Guardar usuario
+    await AsyncStorage.setItem("user", JSON.stringify(data.usuario));
 
     // 🔥 Redirección dependiendo del rol
     if (rol === "cliente") router.push("/homeCliente");
     if (rol === "barbero") router.push("/homeBarbero");
-    if (rol === "dueño") router.push("/homeDueno");
+    if (rol === "dueño") router.push("/settingsBarberShop");
   };
 
   return (

@@ -1,232 +1,195 @@
-import React, { useState } from "react";
-import { Image, Modal, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+} from "react-native";
+import React, { useEffect, useState } from "react";
+import Icon from "react-native-vector-icons/Ionicons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
 
-export default function ConfiguracionBarberia() {
-  const [modalServicio, setModalServicio] = useState(false);
-  const [modalBarbero, setModalBarbero] = useState(false);
-  const [modalDireccion, setModalDireccion] = useState(false);
-  const [modalHorario, setModalHorario] = useState(false);
+export default function SettingsBarberShop() {
+  const router = useRouter();
+  const [owner, setOwner] = useState<any>(null);
 
-  const [mismoHorario, setMismoHorario] = useState(false);
+  // Obtener datos del dueño desde el backend con el token
+  const fetchOwner = async () => {
+    try {
+      const token = await AsyncStorage.getItem("token");
+
+      if (!token) {
+        console.log("No hay token guardado");
+        return;
+      }
+
+      const response = await fetch("http://192.168.1.32:3000/users/me", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+      console.log("Dueño cargado:", data);
+
+      setOwner(data);
+    } catch (error) {
+      console.log("Error cargando dueño:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchOwner();
+  }, []);
+
+  // Generar inicial del avatar
+  const getInitial = (name: string) => {
+    if (!name) return "";
+    return name.trim().charAt(0).toUpperCase();
+  };
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: "#fff", padding: 16 }}
-      contentContainerStyle={{ paddingBottom: 40 }}
-    >
-      {/* Título */}
-      <Text style={{ fontSize: 20, fontWeight: "700", textAlign: "center", marginVertical: 10 }}>
-        Configuración de barbería
-      </Text>
-
-      {/* --- Servicios --- */}
-      <Text style={{ fontSize: 18, fontWeight: "600", marginTop: 20 }}>Servicios</Text>
-
-      <View style={{ marginTop: 10 }}>
-        <View style={{ backgroundColor: "#f8f8f8", borderRadius: 10, padding: 10, marginVertical: 5 }}>
-          <Text style={{ fontWeight: "600" }}>Corte de Cabello</Text>
-          <Text style={{ color: "#666" }}>Corte clásico masculino</Text>
-          <Text style={{ fontWeight: "700", marginTop: 5 }}>$20k</Text>
-        </View>
-
-        <View style={{ backgroundColor: "#f8f8f8", borderRadius: 10, padding: 10, marginVertical: 5 }}>
-          <Text style={{ fontWeight: "600" }}>Arreglo de Barba</Text>
-          <Text style={{ color: "#666" }}>Recorte y perfilado</Text>
-          <Text style={{ fontWeight: "700", marginTop: 5 }}>$10k</Text>
-        </View>
+    <SafeAreaView style={styles.container}>
+      {/* NAVBAR */}
+      <View style={styles.navbar}>
+        <Text style={styles.navbarText}>Configuración</Text>
       </View>
 
-      <TouchableOpacity
-        style={{ backgroundColor: "#2ecc71", padding: 10, borderRadius: 10, marginTop: 10 }}
-        onPress={() => setModalServicio(true)}
-      >
-        <Text style={{ color: "#fff", textAlign: "center", fontWeight: "600" }}>Agregar Servicio</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={{ backgroundColor: "#e74c3c", padding: 10, borderRadius: 10, marginTop: 10 }}
-      >
-        <Text style={{ color: "#fff", textAlign: "center", fontWeight: "600" }}>Eliminar Servicio</Text>
-      </TouchableOpacity>
-
-      {/* --- Horarios de atención --- */}
-      <Text style={{ fontSize: 18, fontWeight: "600", marginTop: 30 }}>Horarios de Atención</Text>
-      <Text style={{ color: "#444", marginVertical: 5 }}>Lunes a Viernes: 9:00 AM - 7:00 PM</Text>
-      <Text style={{ color: "#444" }}>Sábados: 10:00 AM - 5:00 PM</Text>
-
-      <TouchableOpacity
-        style={{ backgroundColor: "#3498db", padding: 10, borderRadius: 10, marginTop: 10 }}
-        onPress={() => setModalHorario(true)}
-      >
-        <Text style={{ color: "#fff", textAlign: "center", fontWeight: "600" }}>Editar Horarios</Text>
-      </TouchableOpacity>
-
-      {/* --- Equipo de trabajo --- */}
-      <Text style={{ fontSize: 18, fontWeight: "600", marginTop: 30 }}>Equipo de Trabajo</Text>
-      <View style={{ marginTop: 10 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", marginVertical: 5 }}>
-          <Image
-            source={{ uri: "https://i.pravatar.cc/100" }}
-            style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10 }}
-          />
-          <View>
-            <Text style={{ fontWeight: "600" }}>Kevin</Text>
-            <Text style={{ color: "#666" }}>Dueño y Estilista</Text>
-          </View>
+      {/* PERFIL DEL DUEÑO */}
+      <View style={styles.profileContainer}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{getInitial(owner?.nombre)}</Text>
         </View>
+
+        <Text style={styles.ownerName}>{owner?.nombre || "Cargando..."}</Text>
+        <Text style={styles.ownerEmail}>{owner?.correo || ""}</Text>
       </View>
 
-      <TouchableOpacity
-        style={{ backgroundColor: "#2ecc71", padding: 10, borderRadius: 10, marginTop: 10 }}
-        onPress={() => setModalBarbero(true)}
-      >
-        <Text style={{ color: "#fff", textAlign: "center", fontWeight: "600" }}>Agregar barbero</Text>
-      </TouchableOpacity>
+      {/* OPCIONES DE CONFIGURACIÓN */}
+      <View style={styles.menuContainer}>
 
-      <TouchableOpacity
-        style={{ backgroundColor: "#e74c3c", padding: 10, borderRadius: 10, marginTop: 10 }}
-      >
-        <Text style={{ color: "#fff", textAlign: "center", fontWeight: "600" }}>Eliminar barbero</Text>
-      </TouchableOpacity>
-
-      {/* --- Foto de la barbería --- */}
-      <Text style={{ fontSize: 18, fontWeight: "600", marginTop: 30 }}>Foto de la Barbería</Text>
-      <Image
-        source={{ uri: "https://images.unsplash.com/photo-1609692814858-f3ee76667b17" }}
-        style={{ width: "100%", height: 150, borderRadius: 12, marginVertical: 10 }}
-      />
-
-      {/* --- Dirección --- */}
-      <Text style={{ fontSize: 18, fontWeight: "600", marginTop: 20 }}>Dirección</Text>
-      <Text style={{ color: "#444", marginTop: 5 }}>123 Calle Principal, Ciudad</Text>
-
-      <TouchableOpacity
-        style={{ backgroundColor: "#3498db", padding: 10, borderRadius: 10, marginTop: 10 }}
-        onPress={() => setModalDireccion(true)}
-      >
-        <Text style={{ color: "#fff", textAlign: "center", fontWeight: "600" }}>Editar dirección</Text>
-      </TouchableOpacity>
-
-      {/* --- Confirmar ajustes --- */}
-      <TouchableOpacity
-        style={{ backgroundColor: "#2980b9", padding: 12, borderRadius: 10, marginTop: 30 }}
-      >
-        <Text style={{ color: "#fff", textAlign: "center", fontWeight: "700" }}>Confirmar ajustes</Text>
-      </TouchableOpacity>
-
-      {/* MODALES */}
-
-      {/* Agregar Servicio */}
-      <Modal visible={modalServicio} transparent animationType="slide">
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Agregar Servicio</Text>
-            <TextInput style={styles.input} placeholder="Nombre del servicio" />
-            <TextInput style={styles.input} placeholder="Precio del servicio" keyboardType="numeric" />
-            <TouchableOpacity
-              style={styles.btnConfirm}
-              onPress={() => setModalServicio(false)}
-            >
-              <Text style={{ color: "#fff", textAlign: "center" }}>Guardar</Text>
-            </TouchableOpacity>
+        {/* Barbería */}
+        <TouchableOpacity
+          style={styles.card}
+          onPress={() => router.push("manageBarbershops")}
+        >
+          <View style={styles.iconCircle}>
+            <Icon name="home-outline" size={40} color="#1E3A8A" />
           </View>
-        </View>
-      </Modal>
+          <Text style={styles.cardText}>Barbería</Text>
+        </TouchableOpacity>
 
-      {/* Agregar Barbero */}
-      <Modal visible={modalBarbero} transparent animationType="slide">
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Agregar Barbero</Text>
-            <TextInput style={styles.input} placeholder="Nombre" />
-            <TextInput style={styles.input} placeholder="Apellido" />
-            <TextInput style={styles.input} placeholder="Correo electrónico" keyboardType="email-address" />
-            <TextInput style={styles.input} placeholder="Contraseña" secureTextEntry />
-            <TouchableOpacity
-              style={styles.btnConfirm}
-              onPress={() => setModalBarbero(false)}
-            >
-              <Text style={{ color: "#fff", textAlign: "center" }}>Guardar</Text>
-            </TouchableOpacity>
+        {/* Servicios */}
+        <TouchableOpacity
+          style={styles.card}
+          onPress={() => router.push("manageServices")}
+        >
+          <View style={styles.iconCircle}>
+            <Icon name="cut-outline" size={40} color="#1E3A8A" />
           </View>
-        </View>
-      </Modal>
+          <Text style={styles.cardText}>Servicios</Text>
+        </TouchableOpacity>
 
-      {/* Editar Dirección */}
-      <Modal visible={modalDireccion} transparent animationType="slide">
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Editar Dirección</Text>
-            <TextInput style={styles.input} placeholder="Nueva dirección" />
-            <TouchableOpacity
-              style={styles.btnConfirm}
-              onPress={() => setModalDireccion(false)}
-            >
-              <Text style={{ color: "#fff", textAlign: "center" }}>Guardar</Text>
-            </TouchableOpacity>
+        {/* Barberos */}
+        <TouchableOpacity
+          style={styles.card}
+          onPress={() => router.push("manageBarbers")}
+        >
+          <View style={styles.iconCircle}>
+            <Icon name="people-outline" size={40} color="#1E3A8A" />
           </View>
-        </View>
-      </Modal>
+          <Text style={styles.cardText}>Barberos</Text>
+        </TouchableOpacity>
 
-      {/* Editar Horario */}
-      <Modal visible={modalHorario} transparent animationType="slide">
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Editar Horario</Text>
-            <Text style={{ marginBottom: 10 }}>Selecciona los días de trabajo:</Text>
-            <Text style={{ color: "#666" }}>Lunes, Martes, Miércoles, Jueves, Viernes</Text>
-
-            <View style={{ flexDirection: "row", alignItems: "center", marginTop: 15 }}>
-              <Text style={{ flex: 1 }}>¿Mismo horario para todos?</Text>
-              <Switch value={mismoHorario} onValueChange={setMismoHorario} />
-            </View>
-
-            <TextInput style={styles.input} placeholder="Hora de inicio (ej. 9:00 AM)" />
-            <TextInput style={styles.input} placeholder="Hora de cierre (ej. 7:00 PM)" />
-
-            <TouchableOpacity
-              style={styles.btnConfirm}
-              onPress={() => setModalHorario(false)}
-            >
-              <Text style={{ color: "#fff", textAlign: "center" }}>Guardar</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-    </ScrollView>
+      </View>
+    </SafeAreaView>
   );
 }
 
+// ======== ESTILOS ========
 const styles = StyleSheet.create({
-  modalContainer: {
+  container: {
     flex: 1,
+    backgroundColor: "#F3F4F6",
+  },
+
+  navbar: {
+    width: "100%",
+    backgroundColor: "#1E3A8A",
+    paddingVertical: 35,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
+    marginBottom: 20,
   },
-  modalContent: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 20,
-    width: "85%",
+  navbarText: {
+    color: "#fff",
+    fontSize: 26,
+    fontWeight: "bold",
   },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    marginBottom: 15,
-    textAlign: "center",
+
+  profileContainer: {
+    alignItems: "center",
+    marginBottom: 30,
   },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 10,
-    padding: 10,
-    marginVertical: 8,
+
+  avatar: {
+    width: 95,
+    height: 95,
+    borderRadius: 50,
+    backgroundColor: "#1E40AF",
+    justifyContent: "center",
+    alignItems: "center",
   },
-  btnConfirm: {
-    backgroundColor: "#3498db",
-    padding: 10,
-    borderRadius: 10,
+
+  avatarText: {
+    fontSize: 45,
+    color: "#fff",
+    fontWeight: "bold",
+  },
+
+  ownerName: {
     marginTop: 10,
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#1F2937",
+  },
+
+  ownerEmail: {
+    fontSize: 14,
+    color: "#6B7280",
+  },
+
+  menuContainer: {
+    width: "100%",
+    paddingHorizontal: 20,
+  },
+
+  card: {
+    width: "100%",
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 20,
+    borderRadius: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    marginBottom: 18,
+    elevation: 5,
+  },
+
+  iconCircle: {
+    width: 55,
+    height: 55,
+    borderRadius: 30,
+    backgroundColor: "#DBEAFE",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 20,
+  },
+
+  cardText: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#1E3A8A",
   },
 });
