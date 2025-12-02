@@ -13,9 +13,9 @@ import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import { getToken, getUsuario } from "../utils/authStorage";
 
-const API_URL = "http://192.168.1.32:3000"; 
+const API_URL = "http://192.168.80.16:3000"; 
 
-export default function AgendarCita() {
+export default function agendarCita() {
   const [barberos, setBarberos] = useState<any[]>([]);
   const [servicios, setServicios] = useState<any[]>([]);
 

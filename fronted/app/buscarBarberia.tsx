@@ -1,10 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, TextInput, ScrollView, Image, StyleSheet,} from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  TextInput,
+  ScrollView,
+  Image,
+  StyleSheet,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import axios from "axios";
 
-const API_URL = "http://192.168.80.14:3000"; // ← cámbialo si usas ngrok
+const API_URL = "http://192.168.80.16:3000"; // Cambiar según tu backend
 
 interface Barberia {
   id: number;
@@ -18,40 +26,33 @@ interface Barberia {
   foto: string;
 }
 
-
 export default function BuscarBarberia() {
-
   const navigation = useNavigation();
   const route = useRoute();
 
-  const initialQuery = (route.params as { initialQuery?: string })?.initialQuery || "";
+  const initialQuery =
+    (route.params as { initialQuery?: string })?.initialQuery || "";
 
   const [query, setQuery] = useState(initialQuery);
   const [resultados, setResultados] = useState<Barberia[]>([]);
 
-    // 📌 TRAER BARBERÍAS DESDE EL BACKEND
+  // 📌 TRAER BARBERÍAS DESDE EL BACKEND
   useEffect(() => {
     const cargarBarberias = async () => {
       try {
         const res = await axios.get(`${API_URL}/barbershops`);
 
-        // Mapear cada barbería a lo que necesita el frontend
         const formateadas = res.data.map((b: any) => ({
           id: b.id,
           nombre: b.nombre,
           direccion: b.direccion,
           foto: b.foto || "https://i.ibb.co/4YgVZ5Q/barberia1.jpg",
-
-          // ⭐ Cálculo del rating con base en reseñas
           rating:
             b.reseñas?.length > 0
               ? b.reseñas.reduce((acc: number, r: any) => acc + r.rating, 0) /
                 b.reseñas.length
               : 4.5,
-
           reviews: b.reseñas?.length || 0,
-
-          // 🔧 Valores por defecto hasta que tengas datos reales
           distancia: "1 km",
           estado: "Abierto",
           precio: "$10k - $30k",
@@ -66,21 +67,21 @@ export default function BuscarBarberia() {
     cargarBarberias();
   }, []);
 
+  // 📌 BUSCADOR
   useEffect(() => {
     const q = query.toLowerCase();
 
     setResultados((prev) =>
-      prev.filter((b: any) =>
-        b.nombre.toLowerCase().includes(q) ||
-        b.direccion.toLowerCase().includes(q)
+      prev.filter(
+        (b: any) =>
+          b.nombre.toLowerCase().includes(q) ||
+          b.direccion.toLowerCase().includes(q)
       )
     );
   }, [query]);
 
-
   return (
     <View style={styles.container}>
-      
       {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -118,9 +119,12 @@ export default function BuscarBarberia() {
       </Text>
 
       <ScrollView style={{ marginTop: 10 }}>
-
         {resultados.map((b) => (
-          <View key={b.id} style={styles.card}>
+          <TouchableOpacity
+            key={b.id}
+            style={styles.card}
+            onPress={() => navigation.navigate("agendarCita", { barberiaId: b.id })}
+          >
             <Image source={{ uri: b.foto }} style={styles.image} />
 
             <View style={{ flex: 1, marginLeft: 12 }}>
@@ -167,7 +171,7 @@ export default function BuscarBarberia() {
 
               <Text style={styles.precio}>{b.precio}</Text>
             </View>
-          </View>
+          </TouchableOpacity>
         ))}
       </ScrollView>
     </View>
@@ -281,3 +285,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
+
