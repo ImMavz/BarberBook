@@ -1,13 +1,5 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Alert,
-  Platform,
-  Image,
-} from "react-native";
+import {View, Text, StyleSheet, TouchableOpacity, Alert, Platform, Image,} from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { Picker } from "@react-native-picker/picker";
@@ -43,8 +35,9 @@ export default function SignUp() {
     const res = await register(user);
 
   if (res.success) {
-    const userId = res.data.usuario.id;
-    const userRole = res.data.usuario.rol;
+    const userId = res.data.id;
+    const userRole = res.data.rol;
+
 
     if (userRole === "dueño") {
       router.push({
