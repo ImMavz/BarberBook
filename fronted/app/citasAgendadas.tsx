@@ -1,140 +1,232 @@
-import React from "react";
-import { useState } from "react";
-import {View, Text, Image, ScrollView, TouchableOpacity, Modal, StyleSheet} from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text, Image, ScrollView, TouchableOpacity, Modal, StyleSheet, Alert,} from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import axios from "axios";
+import { getToken, getUsuario } from "../utils/authStorage";
 import { useNavigation } from "@react-navigation/native";
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-const CitasAgendadas = () => {
-  //Datos temporales
-  const navigation = useNavigation<Nav>();
-  type RootStackParamList = {
+type EstadoCita = "completado" | "en progreso" | "pendiente";
+
+interface Cita {
+  id: number;
+  fecha: string;
+  horaInicio: string;
+  estado: EstadoCita;
+  cliente: any;
+  servicio: any;
+}
+
+
+type RootStackParamList = {
   homeBarbero: undefined;
   citasAgendadas: undefined;
+};
+
+type Nav = NativeStackNavigationProp<RootStackParamList>;
+
+const API_URL = "http://192.168.80.14:3000";
+//const API_URL = "http://192.168.1.32:3000"; Api juanito
+
+const CitasAgendadas = () => {
+  const navigation = useNavigation<Nav>();
+
+  // ============================
+  // 📌 ESTADOS
+  // ============================
+  const [citasHoy, setCitasHoy] = useState<Cita[]>([]);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [citaSeleccionada, setCitaSeleccionada] = useState<Cita | null>(null);
+  const [barbero, setBarbero] = useState<any>(null);
+
+  // ============================
+  // 📌 CARGAR CITAS DEL BARBERO
+  // ============================
+  const cargarCitas = async (barberoId: number, rango: "hoy" | "mañana" | "semana" | "mes" = "hoy") => {
+    try {
+      const token = await getToken();
+      if (!token) {
+        Alert.alert("Error", "No hay token guardado");
+        return;
+      }
+
+      const res = await axios.get(
+        `${API_URL}/appointments/barbero/${barberoId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      // 👉 Filtrar según rango pedido
+      let filtradas = filtrarPorRango(res.data, rango);
+
+      // 👉 Ordenar por hora
+      filtradas = ordenarPorHora(filtradas);
+
+      setCitasHoy(filtradas);
+
+    } catch (err: any) {
+      console.log("❌ Error cargando citas:", err.response?.data || err.message);
+    }
   };
 
-  type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-  // Estado para controlar el modal
-  const [modalVisible, setModalVisible] = useState(false);
+  useEffect(() => {
+    (async () => {
+      const usuario = await getUsuario();
 
-  // Cita seleccionada
-  const [citaSeleccionada, setCitaSeleccionada] = useState<any>(null);
+      console.log("Usuario desde storage:", usuario);
 
-  // Manejar cuando tocan una cita
+      if (!usuario || usuario.rol !== "barbero") {
+        Alert.alert("Error", "Este usuario no es barbero");
+        return;
+      }
+
+    if (!usuario.barbershopId) {
+      Alert.alert("Error", "Este barbero no está asociado a ninguna barbería");
+      return;
+    }
+
+    const idBarbero = usuario.barberoId;   // 🔥 correcto
+    const idBarberia = usuario.barbershopId;
+
+    setBarbero({
+      ...usuario,
+      barberoId: idBarbero,
+      barberiaId: idBarberia,
+    });
+
+    // cargar sus citas
+    cargarCitas(idBarbero);
+
+    })();
+  }, []);
+
+
+  // ============================
+  // 📌 MODAL: ABRIR OPCIONES
+  // ============================
   const abrirOpciones = (cita: any) => {
     setCitaSeleccionada(cita);
     setModalVisible(true);
   };
 
-  // 👉 Aquí pondrás lógica del backend más adelante
-  const cambiarEstadoCita = (nuevoEstado: string) => {
-    if (citaSeleccionada) {
-      console.log("Actualizar al backend →", citaSeleccionada.id, nuevoEstado);
+  // ============================
+  // 📌 ACTUALIZAR ESTADO (backend)
+  // ============================
+  const cambiarEstadoCita = async (nuevoEstado: EstadoCita) => {
+    // 🛑 Seguridad: evitar que se llame sin cita seleccionada
+    if (!citaSeleccionada) {
+      Alert.alert("Error", "No hay una cita seleccionada");
+      return;
     }
-    // cerrar modal
-    setModalVisible(false);
+
+    try {
+      const token = await getToken();
+      if (!token) {
+        Alert.alert("Error", "No se encontró token");
+        return;
+      }
+
+      // 🔗 Llamada al backend
+      await axios.patch(
+        `${API_URL}/appointments/${citaSeleccionada.id}/estado`,
+        { estado: nuevoEstado },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      // 🔄 Refrescar citas del barbero
+      if (barbero?.barberoId) {
+        cargarCitas(barbero.barberoId);
+      }
+
+      setModalVisible(false);
+      Alert.alert("Éxito", "Estado actualizado correctamente");
+    } catch (err: any) {
+      console.log("❌ Error actualizando estado:", err.response?.data || err.message);
+      Alert.alert("Error", "No se pudo cambiar el estado");
+    }
   };
 
-  const citasHoy: {
-    id: number;
-    nombre: string;
-    servicio: string;
-    hora: string;
-    duracion: string;
-    precio: number;
-    estado: "Completado" | "En Progreso" | "Pendiente";
-    foto: string;
-  }[] = [
-    {
-      id: 1,
-      nombre: "Carlos Mendoza",
-      servicio: "Corte Fade + Barba",
-      hora: "9:00 AM",
-      duracion: "45 min",
-      precio: 25000,
-      estado: "Completado",
-      foto: "https://i.pravatar.cc/150?img=12",
-    },
-    {
-      id: 2,
-      nombre: "Miguel Torres",
-      servicio: "Corte Clásico",
-      hora: "11:30 AM",
-      duracion: "30 min",
-      precio: 20000,
-      estado: "En Progreso",
-      foto: "https://i.pravatar.cc/150?img=5",
-    },
-    {
-      id: 3,
-      nombre: "Roberto Silva",
-      servicio: "Corte Moderno + Lavado",
-      hora: "2:00 PM",
-      duracion: "50 min",
-      precio: 30000,
-      estado: "Pendiente",
-      foto: "https://i.pravatar.cc/150?img=20",
-    },
-  ];
+  // ======================================================
+  // 📌 FILTRAR CITAS POR RANGO DE FECHAS
+  // ======================================================
+  const filtrarPorRango = (citas: Cita[], rango: "hoy" | "mañana" | "semana" | "mes") => {
+    const hoy = new Date();
+    const mañana = new Date();
+    mañana.setDate(hoy.getDate() + 1);
 
-  // Colores del estado de la cita
+    const en7dias = new Date();
+    en7dias.setDate(hoy.getDate() + 7);
 
+    const en30dias = new Date();
+    en30dias.setDate(hoy.getDate() + 30);
+
+    return citas.filter((c) => {
+      const fechaCita = new Date(c.fecha);
+
+      switch (rango) {
+        case "hoy":
+          return fechaCita.toDateString() === hoy.toDateString();
+
+        case "mañana":
+          return fechaCita.toDateString() === mañana.toDateString();
+
+        case "semana":
+          return fechaCita >= hoy && fechaCita <= en7dias;
+
+        case "mes":
+          return fechaCita >= hoy && fechaCita <= en30dias;
+
+        default:
+          return false;
+      }
+    });
+  };
+
+  // ======================================================
+  // 📌 ORDENAR CITAS POR HORA (próxima primero)
+  // ======================================================
+  const ordenarPorHora = (citas: Cita[]) => {
+    return citas.sort((a, b) => {
+      const horaA = new Date(`${a.fecha}T${a.horaInicio}`);
+      const horaB = new Date(`${b.fecha}T${b.horaInicio}`);
+      return horaA.getTime() - horaB.getTime();
+    });
+  };
+
+
+  // ============================
+  // 🎨 ESTILOS DE ESTADOS
+  // ============================
   const estadoColor = {
-    Completado: "#3ECF8E",
-    "En Progreso": "#ECA33A",
-    Pendiente: "#C5C7CE",
+    completado: "#3ECF8E",
+    "en progreso": "#ECA33A",
+    pendiente: "#C5C7CE",
   };
 
   const estadoBg = {
-    Completado: "rgba(62, 207, 142, 0.15)",
-    "En Progreso": "rgba(236, 163, 58, 0.15)",
-    Pendiente: "rgba(197, 199, 206, 0.35)",
+    completado: "rgba(62, 207, 142, 0.15)",
+    "en progreso": "rgba(236, 163, 58, 0.15)",
+    pendiente: "rgba(197, 199, 206, 0.35)",
   };
 
-  const CitaCard = ({
-    elemento,
-  }: {
-    elemento: {
-      id: number;
-      nombre: string;
-      servicio: string;
-      hora: string;
-      duracion: string;
-      precio: number;
-      estado: "Completado" | "En Progreso" | "Pendiente";
-      foto: string;
-    };
-  }) => (
+  // ============================
+  // 🎨 COMPONENTE TARJETA
+  // ============================
+  const CitaCard = ({ elemento }: {elemento: Cita}) => (
     <TouchableOpacity
       onPress={() => abrirOpciones(elemento)}
-      style={{
-        backgroundColor: "#fff",
-        padding: 16,
-        borderRadius: 14,
-        marginBottom: 16,
-        flexDirection: "row",
-        justifyContent: "space-between",
-        elevation: 3,
-      }}
+      style={styles.card}
     >
-      {/* FOTO */}
       <View style={{ flexDirection: "row" }}>
         <Image
-          source={{ uri: elemento.foto }}
-          style={{ width: 55, height: 55, borderRadius: 30 }}
+          source={{ uri: elemento.cliente?.foto || "https://i.pravatar.cc/150" }}
+          style={styles.foto}
         />
 
-        {/* INFORMACIÓN */}
         <View style={{ marginLeft: 12, justifyContent: "center" }}>
-          <Text style={{ fontSize: 16, fontWeight: "600" }}>
-            {elemento.nombre}
-          </Text>
-          <Text style={{ color: "#777", marginTop: 2 }}>
-            {elemento.servicio}
-          </Text>
+          <Text style={styles.nombre}>{elemento.cliente?.nombre}</Text>
+          <Text style={styles.servicio}>{elemento.servicio?.nombre}</Text>
 
-          {/* ESTADO */}
           <View
             style={{
               backgroundColor: estadoBg[elemento.estado],
@@ -158,21 +250,12 @@ const CitasAgendadas = () => {
         </View>
       </View>
 
-      {/* HORARIO Y PRECIO */}
       <View style={{ alignItems: "flex-end" }}>
         <Text style={{ color: "#3ECF8E", fontWeight: "700" }}>
-          {elemento.hora}
+          {elemento.horaInicio}
         </Text>
-        <Text style={{ color: "#777", marginTop: 4 }}>{elemento.duracion}</Text>
-
-        <Text
-          style={{
-            marginTop: 10,
-            fontWeight: "700",
-            fontSize: 15,
-          }}
-        >
-          ${elemento.precio / 1000}k
+        <Text style={{ marginTop: 10, fontWeight: "700", fontSize: 15 }}>
+          ${elemento.servicio?.precio || 0} COP
         </Text>
       </View>
     </TouchableOpacity>
@@ -181,172 +264,81 @@ const CitasAgendadas = () => {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: "#F5F7FA" }}>
       {/* HEADER */}
-      <View
-        style={{
-          padding: 16,
-          backgroundColor: "#2B69FF",
-          borderBottomLeftRadius: 20,
-          borderBottomRightRadius: 20,
-        }}
-      >
-      <TouchableOpacity
-        style={{ flexDirection: "row", alignItems: "center", paddingTop: 20 }}
-        onPress={() => navigation.navigate("homeBarbero")}
-      >
-        <Ionicons name="chevron-back" size={24} color="#fff" />
-        <Text style={{ color: "#fff", fontSize: 20, fontWeight: "600" }}>
-          Citas Agendadas
-        </Text>
-      </TouchableOpacity>
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={() => navigation.navigate("homeBarbero")}
+        >
+          <Ionicons name="chevron-back" size={24} color="#fff" />
+          <Text style={styles.headerText}>Citas Agendadas</Text>
+        </TouchableOpacity>
       </View>
 
-      {/* CONTENIDO */}
       <View style={{ padding: 16 }}>
-        {/* Encabezado */}
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 10,
-          }}
-        >
-          <Text style={{ fontSize: 18, fontWeight: "700" }}>Citas de Hoy</Text>
-          <Text style={{ color: "#777" }}>19 Sep 2024</Text>
-        </View>
+        <Text style={styles.sectionTitle}>Citas de Hoy</Text>
 
-        {/* Citas de Hoy */}
-        {citasHoy.map((cita) => (
-          <CitaCard key={cita.id} elemento={cita} />
-        ))}
-
-        {/* ACTIVIDAD RECIENTE */}
-        <View style={{ marginTop: 10, marginBottom: 10 }}>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: 10,
-            }}
-          >
-            <Text style={{ fontSize: 18, fontWeight: "700" }}>
-              Actividad Reciente
-            </Text>
-            <Ionicons
-              name="refresh"
-              size={18}
-              color="#3ECF8E"
-              style={{ marginLeft: 6 }}
-            />
-          </View>
-
-          {citasHoy.map((cita) => (
-            <CitaCard key={`rec-${cita.id}`} elemento={cita} />
-          ))}
-        </View>
-
-        {/* RESUMEN DEL DÍA */}
-        <View
-          style={{
-            backgroundColor: "#2B69FF",
-            padding: 20,
-            borderRadius: 16,
-            marginTop: 10,
-            marginBottom: 30,
-          }}
-        >
-          <Text style={{ color: "#fff", fontSize: 18, fontWeight: "700" }}>
-            Resumen del Día
-          </Text>
-
-          <View
-            style={{
-              flexDirection: "row",
-              marginTop: 20,
-              justifyContent: "space-between",
-            }}
-          >
-            <View style={{ alignItems: "center", width: "50%" }}>
-              <Text style={{ color: "#fff", fontSize: 26, fontWeight: "700" }}>
-                3
-              </Text>
-              <Text style={{ color: "#fff" }}>Citas Hoy</Text>
-            </View>
-
-            <View style={{ alignItems: "center", width: "50%" }}>
-              <Text style={{ color: "#fff", fontSize: 26, fontWeight: "700" }}>
-                $73k
-              </Text>
-              <Text style={{ color: "#fff" }}>Ingresos</Text>
-            </View>
-          </View>
-        </View>
+        {citasHoy.length === 0 ? (
+          <Text style={{ color: "#777" }}>No hay citas hoy.</Text>
+        ) : (
+          citasHoy.map((cita) => <CitaCard key={cita.id} elemento={cita} />)
+        )}
       </View>
+    {/*
+    <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+      <TouchableOpacity onPress={() => cargarCitas(barbero.id, "hoy")}>
+        <Text>Hoy</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={() => cargarCitas(barbero.id, "mañana")}>
+        <Text>Mañana</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={() => cargarCitas(barbero.id, "semana")}>
+        <Text>Semana</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={() => cargarCitas(barbero.id, "mes")}>
+        <Text>Mes</Text>
+      </TouchableOpacity>
+    </View>
+    */}
 
       {/* MODAL */}
       {citaSeleccionada && (
-        <Modal
-          transparent
-          animationType="slide"
-          visible={modalVisible}
-          onRequestClose={() => setModalVisible(false)}
-        >
-          <View style={{
-            flex: 1,
-            justifyContent: "flex-end",
-            backgroundColor: "rgba(0,0,0,0.4)",
-          }}>
-            <View style={{
-              backgroundColor: "#fff",
-              padding: 20,
-              borderTopLeftRadius: 20,
-              borderTopRightRadius: 20,
-            }}>
-              
-              <Text style={{ fontSize: 18, fontWeight: "700", marginBottom: 15 }}>
-                Opciones de la cita
-              </Text>
+        <Modal transparent animationType="slide" visible={modalVisible}>
+          <View style={styles.modalWrap}>
+            <View style={styles.modalBox}>
+              <Text style={styles.modalTitle}>Opciones de la cita</Text>
 
-              {/* COMPLETADA */}
               <TouchableOpacity
                 style={modalStyles.btn}
-                onPress={() => cambiarEstadoCita("Completado")}
+                onPress={() => cambiarEstadoCita("completado")}
               >
                 <Text style={modalStyles.txt}>Completada ✅</Text>
               </TouchableOpacity>
 
-              {/* EN PROGRESO */}
               <TouchableOpacity
                 style={modalStyles.btn}
-                onPress={() => cambiarEstadoCita("En Progreso")}
+                onPress={() => cambiarEstadoCita("en progreso")}
               >
                 <Text style={modalStyles.txt}>En Progreso ⌛</Text>
               </TouchableOpacity>
 
-              {/* PENDIENTE */}
               <TouchableOpacity
                 style={modalStyles.btn}
-                onPress={() => cambiarEstadoCita("Pendiente")}
+                onPress={() => cambiarEstadoCita("pendiente")}
               >
                 <Text style={modalStyles.txt}>Pendiente ⏰</Text>
               </TouchableOpacity>
 
-              {/* CANCELAR */}
               <TouchableOpacity
                 style={[modalStyles.btn, { backgroundColor: "#eee" }]}
                 onPress={() => setModalVisible(false)}
               >
-                <Text style={[modalStyles.txt, { color: "#333" }]}>Cancelar ❌</Text>
+                <Text style={[modalStyles.txt, { color: "#333" }]}>
+                  Cancelar ❌
+                </Text>
               </TouchableOpacity>
-
-              {/* Devolevrse */}
-              <TouchableOpacity
-                style={[modalStyles.btn, { backgroundColor: "#eee" }]}
-                onPress={() => setModalVisible(false)}
-              >
-                <Text style={[modalStyles.txt, { color: "#333" }]}>Devolverse</Text>
-              </TouchableOpacity>
-
             </View>
           </View>
         </Modal>
@@ -354,6 +346,50 @@ const CitasAgendadas = () => {
     </ScrollView>
   );
 };
+
+const styles = StyleSheet.create({
+  header: {
+    padding: 16,
+    paddingTop: 40,
+    backgroundColor: "#2B69FF",
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  backBtn: { flexDirection: "row", alignItems: "center" },
+  headerText: { color: "#fff", fontSize: 20, fontWeight: "600", marginLeft: 6 },
+
+  card: {
+    backgroundColor: "#fff",
+    padding: 16,
+    borderRadius: 14,
+    marginBottom: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    elevation: 3,
+  },
+  foto: { width: 55, height: 55, borderRadius: 30 },
+  nombre: { fontSize: 16, fontWeight: "600" },
+  servicio: { color: "#777", marginTop: 2 },
+
+  sectionTitle: { fontSize: 18, fontWeight: "700", marginBottom: 10 },
+
+  modalWrap: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.4)",
+  },
+  modalBox: {
+    backgroundColor: "#fff",
+    padding: 20,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 15,
+  },
+});
 
 const modalStyles = StyleSheet.create({
   btn: {
@@ -363,10 +399,7 @@ const modalStyles = StyleSheet.create({
     backgroundColor: "#f4f4f4",
     marginBottom: 10,
   },
-  txt: {
-    fontSize: 15,
-    fontWeight: "600",
-  },
+  txt: { fontSize: 15, fontWeight: "600" },
 });
 
 export default CitasAgendadas;
