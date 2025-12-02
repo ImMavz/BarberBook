@@ -42,12 +42,22 @@ export default function SignUp() {
 
     const res = await register(user);
 
-    if (res.success) {
-      Alert.alert("Usuario creado con éxito 🎉");
-      router.push("/loginCliente"); // tu login unificado
-    } else {
-      Alert.alert("Error", JSON.stringify(res.error));
+  if (res.success) {
+    const userId = res.data.usuario.id;
+    const userRole = res.data.usuario.rol;
+
+    if (userRole === "dueño") {
+      router.push({
+        pathname: "/settingsBarberShop",
+        params: { userId },
+      });
+      return;
     }
+
+    // Si es cliente o barbero → sigue igual
+    router.push("/loginCliente");
+  }
+
   };
 
   return (
