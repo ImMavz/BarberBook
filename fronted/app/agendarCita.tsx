@@ -67,7 +67,10 @@ export default function agendarCita() {
   const onChangeFecha = (event: any, selectedDate?: Date) => {
     setShowPicker(false);
     if (selectedDate) {
-      setSelectedFecha(selectedDate.toISOString().split("T")[0]);
+      const y = selectedDate.getFullYear();
+      const m = String(selectedDate.getMonth() + 1).padStart(2, "0");
+      const d = String(selectedDate.getDate()).padStart(2, "0");
+      setSelectedFecha(`${y}-${m}-${d}`);
     }
   };
 
