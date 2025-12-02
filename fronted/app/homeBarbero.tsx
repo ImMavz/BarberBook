@@ -7,14 +7,24 @@ import { getUsuario, getToken } from "../utils/authStorage";
 
 export default function HomeBarbero() {
   const navigation = useNavigation();
+  
 
-  const API_URL = "http://192.168.1.32:3000";
-
+  const API_URL = "http://192.168.80.14:3000";
+  //const API_URL = "http://192.168.1.32:3000" //API Juanito
+  const [usuario, setUsuario] = useState<any>(null);
   const [barbero, setBarbero] = useState<any>(null);
   const [citasHoy, setCitasHoy] = useState(0);
   const [ganancias, setGanancias] = useState(0);
   const [calificacion] = useState(4.8);
   const [actividadReciente, setActividadReciente] = useState([]);
+
+  // ============================
+  // 📌 Cargar usuario local
+  // ============================
+  const cargarUsuario = async () => {
+    const u = await getUsuario();
+    setUsuario(u);
+  };
 
   // ============================
   // 📌 CARGAR DATOS DEL BARBERO
@@ -59,11 +69,19 @@ export default function HomeBarbero() {
       console.log("❌ Error cargando info barbero:", err.response?.data || err.message);
     }
   };
-
+  
+  // ============================
+  // 📌 useEffect
+  // ============================
   useEffect(() => {
+    cargarUsuario();
     cargarBarbero();
   }, []);
 
+  // Si no ha cargado el usuario aún
+  if (!usuario) {
+    return <Text>Cargando...</Text>;
+  }
   return (
     <ScrollView style={styles.container}>
       
@@ -74,8 +92,8 @@ export default function HomeBarbero() {
           style={styles.avatar}
         />
         <View style={{ marginLeft: 10 }}>
-          <Text style={styles.barberName}>{barbero?.barberia?.nombre || "Mi Barbería"}</Text>
-          <Text style={styles.welcome}>Bienvenido, {barbero?.usuario?.nombre}</Text>
+          <Text style={styles.barberName}>{usuario.barbershopName}</Text>
+          <Text style={styles.welcome}>Bienvenido, {usuario.nombre}</Text>
         </View>
 
         <TouchableOpacity style={{ marginLeft: "auto" }}>

@@ -24,7 +24,7 @@ export class AuthService {
     const match = await bcrypt.compare(contraseña, user.contraseña);
     if (!match) throw new UnauthorizedException('Contraseña incorrecta');
 
-    // 🔥 Buscar si el usuario es barbero
+    // 🔥 Buscar si el usuario ES barbero y cargar su barbería
     const barbero = await this.barberRepo.findOne({
       where: { usuario: { id: user.id } },
       relations: ['barberia'],
@@ -35,6 +35,7 @@ export class AuthService {
       rol: user.rol,
       barberoId: barbero?.id || null,
       barbershopId: barbero?.barberia?.id || null,
+      barbershopName: barbero?.barberia?.nombre || null, // 👈 AÑADIDO
     };
 
     return {
@@ -48,6 +49,7 @@ export class AuthService {
         // 🔥 Lo que el front necesita
         barberoId: barbero?.id || null,
         barbershopId: barbero?.barberia?.id || null,
+        barbershopName: barbero?.barberia?.nombre || null, // 👈 AÑADIDO
       },
     };
   }
