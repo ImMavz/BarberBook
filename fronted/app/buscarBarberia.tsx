@@ -2,87 +2,81 @@ import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, TextInput, ScrollView, Image, StyleSheet,} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import axios from "axios";
+
+const API_URL = "http://192.168.80.14:3000"; // ← cámbialo si usas ngrok
+
+interface Barberia {
+  id: number;
+  nombre: string;
+  direccion: string;
+  rating: number;
+  reviews: number;
+  distancia: string;
+  estado: string;
+  precio: string;
+  foto: string;
+}
+
 
 export default function BuscarBarberia() {
+
   const navigation = useNavigation();
   const route = useRoute();
 
   const initialQuery = (route.params as { initialQuery?: string })?.initialQuery || "";
 
   const [query, setQuery] = useState(initialQuery);
-  const [resultados, setResultados] = useState([]);
+  const [resultados, setResultados] = useState<Barberia[]>([]);
 
-  // 🔥 DATOS ESTÁTICOS (Aquí se cambia cuando conectes el backend)
-  const barberias = [
-    {
-      id: 1,
-      nombre: "Barbería 1",
-      rating: 4.8,
-      reviews: 124,
-      distancia: "0.5 km",
-      direccion: "Calle 123, Pradera, Valle del Cauca",
-      estado: "Abierto",
-      precio: "$5k - $30k",
-      foto: "https://i.ibb.co/4YgVZ5Q/barberia1.jpg",
-    },
-    {
-      id: 2,
-      nombre: "Barbería 2",
-      rating: 4.6,
-      reviews: 89,
-      distancia: "1.2 km",
-      direccion: "Calle 123, Cali, Valle del Cauca",
-      estado: "Cierra pronto",
-      precio: "$10k - $30k",
-      foto: "https://i.ibb.co/4YgVZ5Q/barberia1.jpg",
-    },
-    {
-      id: 3,
-      nombre: "Barbería 3",
-      rating: 4.7,
-      reviews: 156,
-      distancia: "2.1 km",
-      direccion: "Calle 123, Buga, Valle del Cauca",
-      estado: "Abierto",
-      precio: "$15k - $40k",
-      foto: "https://i.ibb.co/4YgVZ5Q/barberia1.jpg",
-    },
-    {
-      id: 4,
-      nombre: "Barbería 4",
-      rating: 4.9,
-      reviews: 203,
-      distancia: "0.8 km",
-      direccion: "Calle 123, Medellín, Antioquia",
-      estado: "Cerrado",
-      precio: "$20k - $60k",
-      foto: "https://i.ibb.co/4YgVZ5Q/barberia1.jpg",
-    },
-    {
-      id: 5,
-      nombre: "Barbería 5",
-      rating: 4.5,
-      reviews: 67,
-      distancia: "3.5 km",
-      direccion: "Calle 123, Bogotá, Cundinamarca",
-      estado: "Abierto",
-      precio: "$20k - $60k",
-      foto: "https://i.ibb.co/4YgVZ5Q/barberia1.jpg",
-    },
-  ];
+    // 📌 TRAER BARBERÍAS DESDE EL BACKEND
+  useEffect(() => {
+    const cargarBarberias = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/barbershops`);
 
-  // 🔎 BÚSQUEDA (coincidencia parcial)
+        // Mapear cada barbería a lo que necesita el frontend
+        const formateadas = res.data.map((b: any) => ({
+          id: b.id,
+          nombre: b.nombre,
+          direccion: b.direccion,
+          foto: b.foto || "https://i.ibb.co/4YgVZ5Q/barberia1.jpg",
+
+          // ⭐ Cálculo del rating con base en reseñas
+          rating:
+            b.reseñas?.length > 0
+              ? b.reseñas.reduce((acc: number, r: any) => acc + r.rating, 0) /
+                b.reseñas.length
+              : 4.5,
+
+          reviews: b.reseñas?.length || 0,
+
+          // 🔧 Valores por defecto hasta que tengas datos reales
+          distancia: "1 km",
+          estado: "Abierto",
+          precio: "$10k - $30k",
+        }));
+
+        setResultados(formateadas);
+      } catch (error) {
+        console.log("❌ Error cargando barberías:", error);
+      }
+    };
+
+    cargarBarberias();
+  }, []);
+
   useEffect(() => {
     const q = query.toLowerCase();
 
-    const filtrados = barberias.filter((b) =>
-      b.nombre.toLowerCase().includes(q) ||
-      b.direccion.toLowerCase().includes(q) ||
-      b.estado.toLowerCase().includes(q)
+    setResultados((prev) =>
+      prev.filter((b: any) =>
+        b.nombre.toLowerCase().includes(q) ||
+        b.direccion.toLowerCase().includes(q)
+      )
     );
-
-    setResultados(filtrados);
   }, [query]);
+
 
   return (
     <View style={styles.container}>
