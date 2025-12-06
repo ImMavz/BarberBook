@@ -75,7 +75,7 @@ const CitasAgendadas = () => {
       setCitas(filtradas);
       setFiltro(rango); //Cambia el título
     } catch (err: any) {
-      console.log("❌ Error cargando citas:", err.response?.data || err.message);
+      console.log(" Error cargando citas:", err.response?.data || err.message);
     }
   };
 
@@ -175,7 +175,7 @@ const CitasAgendadas = () => {
               {elemento.servicio?.nombre}
             </Text>
 
-            {/* ⭐ Mostrar fecha cuando el filtro NO es hoy */}
+            {/* Mostrar fecha cuando el filtro NO es hoy */}
             {filtro !== "hoy" && (
               <Text style={{ color: colors.textSecondary, marginTop: 4 }}>
                 {fechaFormato}
@@ -223,10 +223,6 @@ const CitasAgendadas = () => {
     );
   };
 
-  // ================================
-  // 🎨 Colores de estados
-  // ================================
-
   const estadoColor = {
     completado: "#3ECF8E",
     "en progreso": "#ECA33A",
@@ -239,10 +235,7 @@ const CitasAgendadas = () => {
     pendiente: "rgba(197, 199, 206, 0.35)",
   };
 
-  // ================================
-  // 📌 RENDER PRINCIPAL
-  // ================================
-
+//Funcion principal
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
       {/* HEADER */}
@@ -313,7 +306,7 @@ const CitasAgendadas = () => {
                 onPress={() => cambiarEstadoCita("completado")}
               >
                 <Text style={[modalStyles.txt, { color: colors.text }]}>
-                  Completada ✅
+                  Completada
                 </Text>
               </TouchableOpacity>
 
@@ -322,7 +315,7 @@ const CitasAgendadas = () => {
                 onPress={() => cambiarEstadoCita("en progreso")}
               >
                 <Text style={[modalStyles.txt, { color: colors.text }]}>
-                  En Progreso ⌛
+                  En Progreso
                 </Text>
               </TouchableOpacity>
 
@@ -331,7 +324,7 @@ const CitasAgendadas = () => {
                 onPress={() => cambiarEstadoCita("pendiente")}
               >
                 <Text style={[modalStyles.txt, { color: colors.text }]}>
-                  Pendiente ⏰
+                  Pendiente 
                 </Text>
               </TouchableOpacity>
 
@@ -343,7 +336,7 @@ const CitasAgendadas = () => {
                 onPress={() => setModalVisible(false)}
               >
                 <Text style={[modalStyles.txt, { color: "#e74c3c" }]}>
-                  Cancelar ❌
+                  Salir 
                 </Text>
               </TouchableOpacity>
             </View>
