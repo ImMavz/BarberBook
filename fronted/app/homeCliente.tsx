@@ -13,6 +13,7 @@ import axios from "axios";
 import { getToken, getUsuario } from "../utils/authStorage";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useTheme } from "./context/ThemeContext";
 
 type RootStackParamList = {
   buscarBarberia: undefined;
@@ -24,19 +25,15 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function HomeCliente() {
   const navigation = useNavigation<Nav>();
+  const { colors, theme, toggleTheme } = useTheme();
 
-  // 🔥 BACKEND: Cambiar IP cuando sea necesario
-  //const API_URL = "http://192.168.80.14:3000";
-  const API_URL = "http://192.168.1.32:3000" //API Juanito"
+  const API_URL = "http://192.168.80.14:3000";
 
-  // 🔥 Usuario logueado
   const [usuario, setUsuario] = useState<any>(null);
-
-  // 🔥 Próxima cita (vendrá del backend)
   const [proximaCita, setProximaCita] = useState<any>(null);
 
   // ======================================================
-  // 🔥 Cargar usuario y cita próxima desde el backend
+  // Cargar usuario y cita
   // ======================================================
   useEffect(() => {
     (async () => {
@@ -50,20 +47,15 @@ export default function HomeCliente() {
 
         setUsuario(u);
         cargarProximaCita(u.id);
-
       } catch (e) {
         console.log("❌ Error cargando usuario:", e);
       }
     })();
   }, []);
 
-  // ======================================================
-  // 🔥 Cargar PRÓXIMA CITA desde backend
-  // ======================================================
   const cargarProximaCita = async (clienteId: number) => {
     try {
       const token = await getToken();
-
       if (!token) return;
 
       const res = await axios.get(`${API_URL}/appointments/cliente/${clienteId}`, {
@@ -75,7 +67,7 @@ export default function HomeCliente() {
         return;
       }
 
-      // Ordenar por fecha + hora
+      // Ordenamos por fecha y hora
       const ordenadas = res.data.sort((a: any, b: any) => {
         const fechaA = new Date(`${a.fecha}T${a.horaInicio}`);
         const fechaB = new Date(`${b.fecha}T${b.horaInicio}`);
@@ -83,103 +75,112 @@ export default function HomeCliente() {
       });
 
       setProximaCita(ordenadas[0]);
-
-    } catch (error: any) {
-      console.log("❌ Error cargando próxima cita:", error.response?.data || error.message);
+    } catch (error) {
+      console.log("❌ Error cargando próxima cita:", error);
     }
   };
 
+  // ======================================================
+  // ICONO DEL TEMA
+  // ======================================================
+  const themeIcon = theme === "dark" ? "sunny-outline" : "moon-outline";
+
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
       
       {/* HEADER */}
       <View style={styles.header}>
-        <Ionicons name="cut-outline" size={32} color="#6A5AE0" />
+
+        {/* TIJERA — ahora usa colors.text */}
+        <Ionicons name="cut-outline" size={32} color={colors.text} />
 
         <View style={{ marginLeft: 10 }}>
-          <Text style={styles.clientName}>
+          <Text style={[styles.clientName, { color: colors.text }]}>
             {usuario ? `Bienvenido, ${usuario.nombre}` : "Cargando..."}
           </Text>
-          <Text style={styles.welcome}>Agenda cita con el peluquero</Text>
+          <Text style={[styles.welcome, { color: colors.textSecondary }]}>
+            Agenda cita con el peluquero
+          </Text>
         </View>
 
-        <TouchableOpacity
-          style={{ marginLeft: "auto" }}
-          onPress={() => navigation.navigate("historialCliente")}
-        >
-          <View style={styles.historialButton}>
+        {/* BOTÓN LUNA/SOL */}
+        <TouchableOpacity onPress={toggleTheme} style={{ marginLeft: "auto", marginRight: 10 }}>
+          <Ionicons name={themeIcon} size={28} color={colors.text} />
+        </TouchableOpacity>
+
+        {/* BOTÓN HISTORIAL */}
+        <TouchableOpacity onPress={() => navigation.navigate("historialCliente")}>
+          <View style={[styles.historialButton, { backgroundColor: colors.primary }]}>
             <Text style={{ color: "#fff", fontWeight: "600" }}>Historial</Text>
           </View>
         </TouchableOpacity>
+
       </View>
 
       {/* BUSCADOR */}
       <TouchableOpacity
-        style={styles.searchBox}
+        style={[styles.searchBox, { backgroundColor: colors.card }]}
         onPress={() => navigation.navigate("buscarBarberia")}
       >
-        <Ionicons name="search-outline" size={22} color="#777" />
-        <Text style={{ marginLeft: 6, color: "#777" }}>
+        <Ionicons name="search-outline" size={22} color={colors.textSecondary} />
+        <Text style={{ marginLeft: 6, color: colors.textSecondary }}>
           Busca peluquerías
         </Text>
       </TouchableOpacity>
 
       {/* CITAS AGENDADAS */}
-      <Text style={styles.sectionTitle}>Citas agendadas</Text>
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>Citas agendadas</Text>
 
       {proximaCita ? (
-        <View style={styles.citaBox}>
-          <Ionicons name="cut-outline" size={26} color="#6A5AE0" />
+        <View style={[styles.citaBox, { backgroundColor: colors.card }]}>
+
+          {/* Icono tijera también dinámico */}
+          <Ionicons name="cut-outline" size={26} color={colors.text} />
 
           <View style={{ marginLeft: 10 }}>
-            <Text style={styles.citaNombre}>
+            <Text style={[styles.citaNombre, { color: colors.text }]}>
               {proximaCita.barbero?.usuario?.nombre || "Mi barbero"}
             </Text>
-            <Text style={styles.citaServicio}>
+            <Text style={[styles.citaServicio, { color: colors.textSecondary }]}>
               {proximaCita.servicio?.nombre || "Servicio"}
             </Text>
           </View>
 
-          <Text style={styles.citaTiempo}>Hace 2h</Text>
+          <Text style={[styles.citaTiempo, { color: colors.textSecondary }]}>Próxima</Text>
         </View>
       ) : (
-        <Text style={{ color: "#777", marginBottom: 15 }}>
+        <Text style={{ color: colors.textSecondary, marginBottom: 15 }}>
           No tienes citas próximas
         </Text>
       )}
 
-      {/* CÓMO USAR BARBERBOOK */}
-      <Text style={styles.sectionTitle}>¿Cómo usar BarberBook?</Text>
+      {/* PASOS */}
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>
+        ¿Cómo usar BarberBook?
+      </Text>
 
-      <View style={styles.stepCard}>
-        <View style={styles.stepCircle}><Text style={styles.stepNumber}>1</Text></View>
-        <View style={{ marginLeft: 10 }}>
-          <Text style={styles.stepTitle}>Busca una peluquería</Text>
-          <Text style={styles.stepDesc}>
-            Pon el nombre o ubicación en el buscador
-          </Text>
-        </View>
-      </View>
+      {[1, 2, 3].map((num) => (
+        <View key={num} style={[styles.stepCard, { backgroundColor: colors.card }]}>
+          <View style={[styles.stepCircle, { backgroundColor: colors.cardSec }]}>
+            <Text style={[styles.stepNumber, { color: colors.text }]}>{num}</Text>
+          </View>
 
-      <View style={styles.stepCard}>
-        <View style={styles.stepCircle}><Text style={styles.stepNumber}>2</Text></View>
-        <View style={{ marginLeft: 10 }}>
-          <Text style={styles.stepTitle}>Escoge el servicio</Text>
-          <Text style={styles.stepDesc}>
-            Selecciona el servicio disponible que tengan
-          </Text>
-        </View>
-      </View>
+          <View style={{ marginLeft: 10 }}>
+            <Text style={[styles.stepTitle, { color: colors.text }]}>
+              {num === 1 && "Busca una peluquería"}
+              {num === 2 && "Escoge el servicio"}
+              {num === 3 && "Separa tu cita"}
+            </Text>
 
-      <View style={styles.stepCard}>
-        <View style={styles.stepCircle}><Text style={styles.stepNumber}>3</Text></View>
-        <View style={{ marginLeft: 10 }}>
-          <Text style={styles.stepTitle}>Separa tu cita</Text>
-          <Text style={styles.stepDesc}>
-            Escoge día y hora para confirmar
-          </Text>
+            <Text style={[styles.stepDesc, { color: colors.textSecondary }]}>
+              {num === 1 && "Pon el nombre o ubicación en el buscador"}
+              {num === 2 && "Selecciona el servicio disponible que tengan"}
+              {num === 3 && "Escoge día y hora para confirmar"}
+            </Text>
+          </View>
+
         </View>
-      </View>
+      ))}
 
       <View style={{ height: 35 }} />
     </ScrollView>
@@ -189,20 +190,19 @@ export default function HomeCliente() {
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
-    backgroundColor: "#f5f6f8",
   },
 
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 40,
+    paddingVertical: 35,
   },
 
   historialButton: {
-    backgroundColor: "#6A5AE0",
     paddingVertical: 6,
     paddingHorizontal: 14,
     borderRadius: 20,
+    marginLeft: 1,
   },
 
   clientName: {
@@ -211,13 +211,11 @@ const styles = StyleSheet.create({
   },
   welcome: {
     fontSize: 14,
-    color: "#666",
   },
 
   searchBox: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
     padding: 14,
     borderRadius: 15,
     elevation: 2,
@@ -232,29 +230,26 @@ const styles = StyleSheet.create({
 
   citaBox: {
     flexDirection: "row",
-    backgroundColor: "#fff",
     padding: 15,
     borderRadius: 12,
     alignItems: "center",
     marginBottom: 10,
   },
+
   citaNombre: {
     fontSize: 15,
     fontWeight: "600",
   },
   citaServicio: {
     fontSize: 12,
-    color: "#777",
   },
   citaTiempo: {
     marginLeft: "auto",
     fontSize: 12,
-    color: "#999",
   },
 
   stepCard: {
     flexDirection: "row",
-    backgroundColor: "#fff",
     padding: 12,
     borderRadius: 12,
     marginBottom: 12,
@@ -264,7 +259,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "#eee",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -277,6 +271,5 @@ const styles = StyleSheet.create({
   },
   stepDesc: {
     fontSize: 12,
-    color: "#777",
   },
 });
