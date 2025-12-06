@@ -96,9 +96,13 @@ export default function HomeBarbero() {
           <Text style={styles.welcome}>Bienvenido, {usuario.nombre}</Text>
         </View>
 
-        <TouchableOpacity style={{ marginLeft: "auto" }}>
+        <TouchableOpacity
+          style={{ marginLeft: "auto" }}
+          onPress={() => navigation.navigate("perfilBarbero")}
+        >
           <Ionicons name="settings-outline" size={26} color="#333" />
         </TouchableOpacity>
+
       </View>
 
       {/* ESTADÍSTICAS */}
@@ -119,41 +123,49 @@ export default function HomeBarbero() {
         </View>
       </View>
 
-      {/* OPCIONES */}
-      <View style={{ width: "100%", paddingHorizontal: 16, marginTop: 20 }}>
-        
-        {/* Citas agendadas */}
-        <TouchableOpacity
-          onPress={() => navigation.navigate("citasAgendadas")}
-          style={styles.cardOption}
-        >
-          <Ionicons name="calendar" size={36} color="#6A5AE0" />
-          <Text style={styles.cardTitle}>Citas agendadas</Text>
-          <Text style={styles.cardSubtitle}>{citasHoy} Hoy</Text>
-        </TouchableOpacity>
+  {/* OPCIONES */}
+  <View style={{ width: "100%", paddingHorizontal: 16, marginTop: 20 }}>
 
-        {/* Historial */}
-        <TouchableOpacity
-          onPress={() => navigation.navigate("historialCitasBarbero")}
-          style={styles.cardOption}
-        >
-          <Ionicons name="refresh" size={36} color="#3ECF8E" />
-          <Text style={styles.cardTitle}>Historial</Text>
-          <Text style={styles.cardSubtitle}>Citas completadas</Text>
-        </TouchableOpacity>
+    {/* 🔹 FILA: Citas agendadas + Historial */}
+    <View style={styles.rowOptions}>
 
-        {/* Estadísticas */}
-        <TouchableOpacity
-          onPress={() => navigation.navigate("estadisticas")}
-          style={styles.statsCard}
-        >
-          <View>
-            <Text style={styles.cardTitle}>Estadísticas</Text>
-            <Text style={styles.cardSubtitle}>Analíticas del barbero</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={26} color="#777" />
-        </TouchableOpacity>
+      {/* Citas agendadas */}
+      <TouchableOpacity
+        onPress={() => navigation.navigate("citasAgendadas")}
+        style={styles.cardOption}
+      >
+        <Ionicons name="calendar" size={36} color="#6A5AE0" />
+        <Text style={styles.cardTitle}>Citas agendadas</Text>
+        <Text style={styles.cardSubtitle}>{citasHoy} Hoy</Text>
+      </TouchableOpacity>
+
+      {/* Historial */}
+      <TouchableOpacity
+        onPress={() => navigation.navigate("historialCitasBarbero")}
+        style={styles.cardOption}
+      >
+        <Ionicons name="time-outline" size={36} color="#3ECF8E" />
+        <Text style={styles.cardTitle}>Historial</Text>
+        <Text style={styles.cardSubtitle}>Citas completadas</Text>
+      </TouchableOpacity>
+
+    </View>
+
+    {/* Estadísticas */}
+    <TouchableOpacity
+      onPress={() => navigation.navigate("estadisticas")}
+      style={styles.statsCard}
+    >
+      <Ionicons name="stats-chart" size={36} color="#FF9F43" />
+      <View style={{ marginLeft: 12 }}>
+        <Text style={styles.cardTitle}>Estadísticas</Text>
+        <Text style={styles.cardSubtitle}>Analíticas del barbero</Text>
       </View>
+      <Ionicons name="chevron-forward" size={26} color="#777" style={{ marginLeft: "auto" }} />
+    </TouchableOpacity>
+
+  </View>
+
 
       {/* ACTIVIDAD RECIENTE */}
       <Text style={styles.sectionTitle}>Actividad reciente</Text>
@@ -184,7 +196,7 @@ const styles = StyleSheet.create({
   container: { paddingHorizontal: 20, backgroundColor: "#f5f6f8" },
   header: { flexDirection: "row", alignItems: "center", paddingVertical: 40 },
   avatar: { width: 55, height: 55, borderRadius: 50 },
-  barberName: { fontSize: 20, fontWeight: "700" },
+  barberName: { fontSize: 15, fontWeight: "700" },
   welcome: { fontSize: 14, color: "#666" },
 
   statsRow: { flexDirection: "row", justifyContent: "space-between" },
@@ -199,10 +211,15 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: "center",
     elevation: 3,
-    marginBottom: 16,
   },
   cardTitle: { marginTop: 10, fontSize: 18, fontWeight: "600" },
   cardSubtitle: { marginTop: 4, color: "#777", fontSize: 12 },
+  rowOptions: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  width: "100%",
+  marginBottom: 10,
+  },
 
   statsCard: {
     width: "100%",
