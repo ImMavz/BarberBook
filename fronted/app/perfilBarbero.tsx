@@ -13,43 +13,50 @@ import axios from "axios";
 import { getToken, getUsuario } from "../utils/authStorage";
 import { useNavigation } from "@react-navigation/native";
 
-const API_URL = "http://192.168.1.32:3000";
+
+const API_URL = "http://192.168.80.14:3000";
 
 export default function PerfilBarbero() {
   const navigation = useNavigation();
   const [barbero, setBarbero] = useState<any>(null);
   const [resenas, setResenas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [usuario, setUsuario] = useState<any>(null);
 
-  const obtenerPerfil = async () => {
-    try {
-      const token = await getToken();
-      const usuario = await getUsuario();
+const obtenerPerfil = async () => {
+  try {
+    const token = await getToken();
 
-      const res = await axios.get(`${API_URL}/barbers/profile/${usuario.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+    const res = await axios.get(`${API_URL}/barbers/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-      setBarbero(res.data.barbero);
-      setResenas(res.data.resenas || []);
-    } catch (error: any) {
-      console.log("ERROR:", error?.response?.data ?? error?.message ?? error);
-      Alert.alert("Error", "No se pudo cargar el perfil");
-    } finally {
-      setLoading(false);
-    }
+    setBarbero(res.data); // este ES el barbero
+    setResenas(res.data.resenas ?? []); 
+  } catch (error: any) {
+    console.log("ERROR:", error?.response?.data ?? error?.message);
+    Alert.alert("Error", "No se pudo cargar el perfil");
+  } finally {
+    setLoading(false);
+  }
+};
+  const cargarUsuario = async () => {
+    const u = await getUsuario();
+    setUsuario(u);
   };
 
-  useEffect(() => {
-    obtenerPerfil();
-  }, []);
+useEffect(() => {
+  cargarUsuario();
+  obtenerPerfil();   // 🔥 SE LLAMA APENAS ENTRA A LA PANTALLA
+}, []);
+
 
   const editarPerfil = () => {
-    navigation.navigate("EditarPerfilBarbero" as never);
+    navigation.navigate("editarPerfilBarbero" as never);
   };
 
   const irInicio = () => {
-    navigation.navigate("HomeBarbero" as never);
+    navigation.navigate("homeBarbero" as never);
   };
 
   const renderEstrellas = (rating: number) => {
@@ -100,8 +107,8 @@ export default function PerfilBarbero() {
         {/* FOTO DE PERFIL */}
         <View style={styles.profileSection}>
           <View style={styles.avatarContainer}>
-            {barbero.foto ? (
-              <Image source={{ uri: barbero.foto }} style={styles.avatar} />
+            {barbero.fotoPerfil ? (
+              <Image source={{ uri: barbero.fotoPerfil }} style={styles.avatar} />
             ) : (
               <View style={[styles.avatar, styles.avatarPlaceholder]}>
                 <Ionicons name="person" size={50} color="#999" />
@@ -109,11 +116,11 @@ export default function PerfilBarbero() {
             )}
           </View>
 
-          <Text style={styles.nombre}>{barbero.nombre}</Text>
-          <Text style={styles.email}>{barbero.email}</Text>
+          <Text style={styles.nombre}>{barbero.usuario?.nombre || "nombre"}</Text>
+          <Text style={styles.email}>{barbero.usuario?.correo || "correo@barbero.com"}</Text>
 
           <TouchableOpacity style={styles.linkButton}>
-            <Text style={styles.linkText}>Donde dieguito</Text>
+            <Text style={styles.linkText}>{usuario.barbershopName || "Barbershop"}</Text>
           </TouchableOpacity>
 
           {/* RATING */}
@@ -176,7 +183,7 @@ export default function PerfilBarbero() {
 
       {/* BOTÓN FLOTANTE */}
       <View style={styles.bottomButtons}>
-        <TouchableOpacity style={styles.btnInicio} onPress={irInicio}>
+        <TouchableOpacity  style={styles.btnInicio} onPress={irInicio}>
           <Ionicons name="home" size={20} color="#555" />
           <Text style={styles.btnInicioText}>Inicio</Text>
         </TouchableOpacity>
