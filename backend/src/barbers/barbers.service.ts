@@ -104,4 +104,10 @@ export class BarbersService {
     const barber = await this.findOne(id);
     return this.repo.remove(barber);
   }
+  
+  //Barberos de la barberia
+  findByBarbershop(id: number) {
+  return this.repo.find({ where: { barberia: { id } } });
+  }
+
 }

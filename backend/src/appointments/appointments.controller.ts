@@ -59,4 +59,9 @@ export class AppointmentsController {
   delete(@Param('id') id: number) {
     return this.service.remove(Number(id));
   }
+  @Get("barbershop/:id")
+  async getByBarbershop(@Param("id") id: string) {
+  return this.service.findByBarbershop(Number(id));
+}
+
 }

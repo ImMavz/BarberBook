@@ -107,4 +107,11 @@ export class AppointmentsService {
     const cita = await this.findOne(id);
     return this.repo.remove(cita);
   }
+  async findByBarbershop(barbershopId: number) {
+  return this.repo.find({
+    where: { barbero: { barberia: { id: barbershopId } } },
+    relations: ["barbero", "cliente", "servicio"],
+  });
+}
+
 }

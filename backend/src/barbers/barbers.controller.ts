@@ -44,6 +44,12 @@ export class BarbersController {
     return this.service.findOne(Number(id));
   }
 
+  @Get("barbershop/:id")
+  findByBarbershop(@Param("id") id: string) {
+    return this.service.findByBarbershop(Number(id));
+  }
+
+
   // ======================
   // 🔹 Crear barbero
   // ======================
