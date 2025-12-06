@@ -11,8 +11,10 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import axios from "axios";
+import { useTheme } from "./context/ThemeContext";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-const API_URL = "http://192.168.80.16:3000"; // Cambiar según tu backend
+const API_URL = "http://192.168.80.14:3000";
 
 interface Barberia {
   id: number;
@@ -26,9 +28,16 @@ interface Barberia {
   foto: string;
 }
 
+type RootStackParamList = {
+  agendarCita: { barberiaId: number };   // ← ESTE ES EL QUE FALTABA
+};
+type Nav = NativeStackNavigationProp<RootStackParamList>;
+
+
 export default function BuscarBarberia() {
   const navigation = useNavigation();
   const route = useRoute();
+  const { colors } = useTheme();
 
   const initialQuery =
     (route.params as { initialQuery?: string })?.initialQuery || "";
@@ -36,7 +45,9 @@ export default function BuscarBarberia() {
   const [query, setQuery] = useState(initialQuery);
   const [resultados, setResultados] = useState<Barberia[]>([]);
 
-  // 📌 TRAER BARBERÍAS DESDE EL BACKEND
+  // =========================================
+  //   Cargar barberías
+  // =========================================
   useEffect(() => {
     const cargarBarberias = async () => {
       try {
@@ -67,7 +78,9 @@ export default function BuscarBarberia() {
     cargarBarberias();
   }, []);
 
-  // 📌 BUSCADOR
+  // =========================================
+  //  BUSCADOR EN TIEMPO REAL
+  // =========================================
   useEffect(() => {
     const q = query.toLowerCase();
 
@@ -81,40 +94,41 @@ export default function BuscarBarberia() {
   }, [query]);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      
       {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={26} color="#111" />
+          <Ionicons name="chevron-back" size={26} color={colors.text} />
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>Barberías encontradas</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>
+          Barberías encontradas
+        </Text>
 
-        <TouchableOpacity>
-          <Ionicons name="ellipsis-horizontal" size={24} color="#111" />
-        </TouchableOpacity>
+        <Ionicons name="ellipsis-horizontal" size={24} color={colors.text} />
       </View>
 
       {/* BUSCADOR */}
       <View style={styles.searchRow}>
-        <View style={styles.searchBox}>
-          <Ionicons name="search-outline" size={20} color="#888" />
+        <View style={[styles.searchBox, { backgroundColor: colors.card }]}>
+          <Ionicons name="search-outline" size={20} color={colors.textSecondary} />
           <TextInput
             placeholder="Buscar barbería"
             value={query}
             onChangeText={setQuery}
-            placeholderTextColor="#aaa"
-            style={styles.searchInput}
+            placeholderTextColor={colors.textSecondary}
+            style={[styles.searchInput, { color: colors.text }]}
           />
         </View>
 
-        <TouchableOpacity style={styles.filterBtn}>
+        <TouchableOpacity style={[styles.filterBtn, { backgroundColor: colors.primary }]}>
           <Text style={{ color: "#fff", fontWeight: "600" }}>Filtros</Text>
         </TouchableOpacity>
       </View>
 
       {/* RESULTADOS */}
-      <Text style={styles.resultText}>
+      <Text style={[styles.resultText, { color: colors.textSecondary }]}>
         {resultados.length} resultados encontrados
       </Text>
 
@@ -122,54 +136,48 @@ export default function BuscarBarberia() {
         {resultados.map((b) => (
           <TouchableOpacity
             key={b.id}
-            style={styles.card}
+            style={[styles.card, { backgroundColor: colors.card }]}
             onPress={() => navigation.navigate("agendarCita", { barberiaId: b.id })}
+
           >
             <Image source={{ uri: b.foto }} style={styles.image} />
 
             <View style={{ flex: 1, marginLeft: 12 }}>
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Text style={styles.nombre}>{b.nombre}</Text>
-              </View>
+              
+              <Text style={[styles.nombre, { color: colors.text }]}>
+                {b.nombre}
+              </Text>
 
               <View style={styles.ratingRow}>
                 <Ionicons name="star" size={16} color="#FFD700" />
-                <Text style={styles.ratingText}>{b.rating}</Text>
-                <Text style={styles.reviewText}>({b.reviews})</Text>
-                <Text style={styles.distancia}>{b.distancia}</Text>
+                <Text style={[styles.ratingText, { color: colors.text }]}>{b.rating}</Text>
+                <Text style={[styles.reviewText, { color: colors.textSecondary }]}>
+                  ({b.reviews})
+                </Text>
+                <Text style={[styles.distancia, { color: colors.textSecondary }]}>
+                  {b.distancia}
+                </Text>
               </View>
 
-              <Text style={styles.direccion}>{b.direccion}</Text>
+              <Text style={[styles.direccion, { color: colors.textSecondary }]}>
+                {b.direccion}
+              </Text>
 
               <View
                 style={[
                   styles.estadoBox,
-                  {
-                    backgroundColor:
-                      b.estado === "Abierto"
-                        ? "rgba(52,199,89,0.15)"
-                        : b.estado === "Cierra pronto"
-                        ? "rgba(255,159,10,0.15)"
-                        : "rgba(255,69,58,0.15)",
-                  },
+                  { backgroundColor: "rgba(52,199,89,0.15)" },
                 ]}
               >
-                <Text
-                  style={{
-                    color:
-                      b.estado === "Abierto"
-                        ? "#34C759"
-                        : b.estado === "Cierra pronto"
-                        ? "#FF9F0A"
-                        : "#FF3B30",
-                    fontWeight: "600",
-                  }}
-                >
+                <Text style={{ color: "#34C759", fontWeight: "600" }}>
                   {b.estado}
                 </Text>
               </View>
 
-              <Text style={styles.precio}>{b.precio}</Text>
+              <Text style={[styles.precio, { color: colors.text }]}>
+                {b.precio}
+              </Text>
+
             </View>
           </TouchableOpacity>
         ))}
@@ -178,13 +186,9 @@ export default function BuscarBarberia() {
   );
 }
 
-// 🎨 ESTILOS
+// ESTILOS
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F5F6FA",
-    padding: 16,
-  },
+  container: { flex: 1, padding: 16 },
 
   header: {
     paddingTop: 25,
@@ -205,7 +209,6 @@ const styles = StyleSheet.create({
 
   searchBox: {
     flex: 1,
-    backgroundColor: "#fff",
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 10,
@@ -220,7 +223,6 @@ const styles = StyleSheet.create({
   },
 
   filterBtn: {
-    backgroundColor: "#2B69FF",
     marginLeft: 10,
     paddingHorizontal: 18,
     justifyContent: "center",
@@ -230,12 +232,10 @@ const styles = StyleSheet.create({
   resultText: {
     marginTop: 15,
     fontSize: 14,
-    color: "#777",
   },
 
   card: {
     flexDirection: "row",
-    backgroundColor: "#fff",
     padding: 12,
     borderRadius: 14,
     marginBottom: 14,
@@ -248,10 +248,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
 
-  nombre: {
-    fontSize: 16,
-    fontWeight: "700",
-  },
+  nombre: { fontSize: 16, fontWeight: "700" },
 
   ratingRow: {
     flexDirection: "row",
@@ -261,13 +258,12 @@ const styles = StyleSheet.create({
 
   ratingText: { marginLeft: 4, fontWeight: "600" },
 
-  reviewText: { marginLeft: 4, color: "#777" },
+  reviewText: { marginLeft: 4 },
 
-  distancia: { marginLeft: 10, color: "#777" },
+  distancia: { marginLeft: 10 },
 
   direccion: {
     marginTop: 4,
-    color: "#777",
     width: "90%",
   },
 
@@ -285,4 +281,3 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
-
