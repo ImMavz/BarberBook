@@ -1,156 +1,208 @@
-import React from "react";
-import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  Image,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import axios from "axios";
 import { useNavigation } from "@react-navigation/native";
+import { getToken, getUsuario } from "../utils/authStorage";
+import { useTheme } from "./context/ThemeContext";
+
+const API_URL = "http://192.168.80.14:3000";
+
+interface Cita {
+  id: number;
+  fecha: string;
+  horaInicio: string;
+  cliente: any;
+  servicio: any;
+  estado: string;
+}
 
 export default function HistorialCitas() {
   const navigation = useNavigation();
+  const { colors } = useTheme();
 
-  // datos de prueba
+  const [historialAgrupado, setHistorialAgrupado] = useState<any>({});
+  const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
 
-  const historial = [
-    {
-      fecha: "19/10/24",
-      citas: [
-        {
-          id: 1,
-          nombre: "Carlos Mendoza",
-          servicio: "Corte de pelo + Barba",
-          hora: "9:00 AM",
-          duracion: "45 min",
-          precio: "$25k",
-          estado: "Completado",
-          foto: "https://i.pravatar.cc/150?img=32"
-        },
-        {
-          id: 2,
-          nombre: "Miguel Torres",
-          servicio: "Corte de pelo",
-          hora: "11:30 AM",
-          duracion: "30 min",
-          precio: "$20k",
-          estado: "Cancelado",
-          foto: "https://i.pravatar.cc/150?img=12"
-        },
-        {
-          id: 3,
-          nombre: "Carlos Mendoza",
-          servicio: "Corte de pelo + Barba",
-          hora: "7:00 PM",
-          duracion: "45 min",
-          precio: "$25k",
-          estado: "Completado",
-          foto: "https://i.pravatar.cc/150?img=32"
-        }
-      ]
-    },
-    {
-      fecha: "18/10/24",
-      citas: [
-        {
-          id: 4,
-          nombre: "Carlos Mendoza",
-          servicio: "Corte de pelo + Barba",
-          hora: "9:00 AM",
-          duracion: "45 min",
-          precio: "$25k",
-          estado: "Completado",
-          foto: "https://i.pravatar.cc/150?img=32"
-        },
-        {
-          id: 5,
-          nombre: "Miguel Torres",
-          servicio: "Corte de pelo",
-          hora: "11:30 AM",
-          duracion: "30 min",
-          precio: "$20k",
-          estado: "Cancelado",
-          foto: "https://i.pravatar.cc/150?img=12"
-        },
-        {
-          id: 6,
-          nombre: "Carlos Mendoza",
-          servicio: "Corte de pelo + Barba",
-          hora: "7:00 PM",
-          duracion: "45 min",
-          precio: "$25k",
-          estado: "Completado",
-          foto: "https://i.pravatar.cc/150?img=32"
-        }
-      ]
+  // Cargar citas pasadas del backend.
+  
+  const cargarHistorial = async () => {
+    try {
+      const usuario = await getUsuario();
+      const token = await getToken();
+
+      if (!usuario.barberoId) return;
+
+      const res = await axios.get(
+        `${API_URL}/appointments/barbero/${usuario.barberoId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const hoy = new Date();
+
+      // Filtrar solo citas PASADAS
+      const pasadas = res.data.filter((cita: Cita) => {
+        const fechaCita = new Date(cita.fecha);
+        return fechaCita < hoy;
+      });
+
+      // Agrupar por fecha
+      const agrupado: any = {};
+
+      pasadas.forEach((cita: Cita) => {
+        const fecha = new Date(cita.fecha).toLocaleDateString("es-CO", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        });
+
+        if (!agrupado[fecha]) agrupado[fecha] = [];
+        agrupado[fecha].push(cita);
+      });
+
+      setHistorialAgrupado(agrupado);
+    } catch (err) {
+      console.log("❌ Error historial:", err.response?.data || err.message);
     }
-  ];
-
-  // Colores de estado
-  const stateColors: any = {
-    Completado: "#34C759",
-    Cancelado: "#FF3B30",
-    Pendiente: "#B0B0B0"
   };
 
-  return (
-    <ScrollView style={styles.container}>
+  useEffect(() => {
+    cargarHistorial();
+  }, []);
 
-      {/* HEADER */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={26} color="#fff" />
-        </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>Historial de citas</Text>
+  const stateColors: any = {
+    completado: "#34C759",
+    cancelado: "#FF3B30",
+    pendiente: "#A5A7AE",
+  };
 
-        <Ionicons name="ellipsis-vertical" size={24} color="#fff" />
+
+  const CitaCard = ({ cita }: { cita: Cita }) => (
+    <View
+      style={[
+        styles.card,
+        { backgroundColor: colors.card, borderColor: colors.border },
+      ]}
+    >
+      <Image
+        source={{ uri: cita.cliente?.fotoPerfil || "https://i.pravatar.cc/150" }}
+        style={styles.avatar}
+      />
+
+      <View style={{ flex: 1, marginLeft: 10 }}>
+        <Text style={[styles.name, { color: colors.text }]}>
+          {cita.cliente?.nombre}
+        </Text>
+
+        <Text style={[styles.service, { color: colors.textSecondary }]}>
+          {cita.servicio?.nombre}
+        </Text>
+
+        <View
+          style={[
+            styles.statusTag,
+            { backgroundColor: stateColors[cita.estado] || "#999" },
+          ]}
+        >
+          <Text style={styles.statusText}>{cita.estado}</Text>
+        </View>
       </View>
 
-      {/* HISTORIAL POR FECHAS */}
-      {historial.map((dia) => (
-        <View key={dia.fecha} style={{ marginBottom: 20 }}>
-          <Text style={styles.dateTitle}>Citas del {dia.fecha}</Text>
+      <View style={{ alignItems: "flex-end" }}>
+        <Text style={[styles.time, { color: "#3B6EF6" }]}>
+          {cita.horaInicio}
+        </Text>
 
-          {dia.citas.map((cita) => (
-            <View key={cita.id} style={styles.card}>
-              <Image source={{ uri: cita.foto }} style={styles.avatar} />
+        <Text style={[styles.price, { color: colors.text }]}>
+          ${cita.servicio?.precio} COP
+        </Text>
+      </View>
+    </View>
+  );
 
-              <View style={{ flex: 1, marginLeft: 10 }}>
-                <Text style={styles.name}>{cita.nombre}</Text>
-                <Text style={styles.service}>{cita.servicio}</Text>
+//Funcion principal
+  return (
+    <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
+      {/* HEADER */}
+      <View style={[styles.header, { backgroundColor: colors.card }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="chevron-back" size={26} color={colors.text} />
+        </TouchableOpacity>
 
-                <View
-                  style={[
-                    styles.statusTag,
-                    { backgroundColor: stateColors[cita.estado] }
-                  ]}
-                >
-                  <Text style={styles.statusText}>{cita.estado}</Text>
-                </View>
-              </View>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>
+          Historial de Citas
+        </Text>
 
-              <View style={{ alignItems: "flex-end" }}>
-                <Text style={styles.time}>{cita.hora}</Text>
-                <Text style={styles.duration}>{cita.duracion}</Text>
-                <Text style={styles.price}>{cita.precio}</Text>
-              </View>
-            </View>
-          ))}
-        </View>
-      ))}
+        <Ionicons name="time-outline" size={24} color={colors.text} />
+      </View>
+
+      {/* LISTA AGRUPADA */}
+      {Object.keys(historialAgrupado).length === 0 && (
+        <Text
+          style={{
+            textAlign: "center",
+            marginTop: 40,
+            color: colors.textSecondary,
+          }}
+        >
+          No hay citas anteriores.
+        </Text>
+      )}
+
+      {Object.entries(historialAgrupado).map(([fecha, citas]: any) => {
+        const mostrarTodas = expandedDays[fecha] === true;
+        const citasMostradas = mostrarTodas ? citas : citas.slice(0, 3);
+
+        return (
+          <View key={fecha} style={{ marginBottom: 20 }}>
+            <Text
+              style={[
+                styles.dateTitle,
+                { color: colors.text, paddingHorizontal: 15 },
+              ]}
+            >
+              Citas del {fecha}
+            </Text>
+
+            {citasMostradas.map((cita: Cita) => (
+              <CitaCard key={cita.id} cita={cita} />
+            ))}
+
+            {/* BOTÓN MOSTRAR MÁS / MENOS */}
+            {citas.length > 3 && (
+              <TouchableOpacity
+                onPress={() =>
+                  setExpandedDays((prev) => ({
+                    ...prev,
+                    [fecha]: !prev[fecha],
+                  }))
+                }
+                style={{ alignItems: "center", marginTop: 6 }}
+              >
+                <Text style={{ color: "#3B6EF6", fontWeight: "600" }}>
+                  {mostrarTodas ? "Mostrar menos ▲" : "Mostrar todas ▼"}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        );
+      })}
     </ScrollView>
   );
 }
 
-// ──────────────────────────────────────────────
-// STYLES
-// ──────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F4F5FA",
-  },
-
   header: {
     width: "100%",
-    backgroundColor: "#3B6EF6",
     paddingTop: 55,
     paddingBottom: 18,
     paddingHorizontal: 15,
@@ -162,7 +214,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#fff",
   },
 
   dateTitle: {
@@ -170,18 +221,16 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginBottom: 10,
     marginTop: 20,
-    paddingHorizontal: 15,
   },
 
   card: {
     flexDirection: "row",
-    backgroundColor: "#fff",
     padding: 12,
     marginHorizontal: 15,
     borderRadius: 12,
     marginBottom: 12,
     alignItems: "center",
-    elevation: 3,
+    borderWidth: 1,
   },
 
   avatar: {
@@ -197,8 +246,6 @@ const styles = StyleSheet.create({
 
   service: {
     fontSize: 13,
-    color: "#666",
-    marginBottom: 6,
   },
 
   statusTag: {
@@ -218,18 +265,11 @@ const styles = StyleSheet.create({
   time: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#3B6EF6",
-  },
-
-  duration: {
-    fontSize: 12,
-    color: "#666",
-    marginTop: 2,
   },
 
   price: {
+    marginTop: 6,
     fontSize: 15,
     fontWeight: "700",
-    marginTop: 6,
   },
 });
