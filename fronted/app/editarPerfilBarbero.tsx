@@ -14,7 +14,7 @@ import axios from "axios";
 import { getToken, getUsuario } from "../utils/authStorage";
 import { useNavigation } from "@react-navigation/native";
 
-const API_URL = "http://192.168.1.32:3000";
+const API_URL = "http://192.168.80.14:3000"; 
 
 export default function EditarPerfilBarbero() {
   const navigation = useNavigation();
@@ -22,25 +22,29 @@ export default function EditarPerfilBarbero() {
   const [contrasena, setContrasena] = useState("");
   const [telefono, setTelefono] = useState("");
   const [barbero, setBarbero] = useState<any>(null);
+  const [barberId, setBarberId] = useState<string | null>(null); 
   const [loading, setLoading] = useState(true);
   const [guardando, setGuardando] = useState(false);
 
   const obtenerPerfil = async () => {
     try {
       const token = await getToken();
-      const usuario = await getUsuario();
 
-      const res = await axios.get(`${API_URL}/barbers/profile/${usuario.id}`, {
+      const res = await axios.get(`${API_URL}/barbers/me`, { 
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const data = res.data.barbero;
+      const data = res.data;
       setBarbero(data);
-      setEmail(data.email || "");
+      
+      setBarberId(data.id); 
+      
+      setEmail(data.usuario?.correo || data.email || "");
       setTelefono(data.telefono || "");
+
     } catch (error: any) {
       console.log("ERROR:", error?.response?.data ?? error?.message ?? error);
-      Alert.alert("Error", "No se pudo cargar el perfil");
+      Alert.alert("Error", "No se pudo cargar el perfil para editar");
     } finally {
       setLoading(false);
     }
@@ -55,15 +59,19 @@ export default function EditarPerfilBarbero() {
       Alert.alert("Error", "El correo electrónico es requerido");
       return;
     }
+    
+    if (!barberId) {
+        Alert.alert("Error", "ID del barbero no disponible para actualizar");
+        return;
+    }
 
     setGuardando(true);
 
     try {
       const token = await getToken();
-      const usuario = await getUsuario();
-
+      
       const datosActualizar: any = {
-        email: email.trim(),
+        correo: email.trim(),
         telefono: telefono.trim(),
       };
 
@@ -72,7 +80,7 @@ export default function EditarPerfilBarbero() {
       }
 
       await axios.put(
-        `${API_URL}/barbers/profile/${usuario.id}`,
+        `${API_URL}/barbers/profile/${barberId}`,
         datosActualizar,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -82,9 +90,11 @@ export default function EditarPerfilBarbero() {
       Alert.alert("Éxito", "Perfil actualizado correctamente", [
         {
           text: "OK",
-          onPress: () => navigation.goBack(),
+         
+          onPress: () => navigation.goBack(), 
         },
       ]);
+      
     } catch (error: any) {
       console.log("ERROR:", error?.response?.data ?? error?.message ?? error);
       Alert.alert(
@@ -97,7 +107,7 @@ export default function EditarPerfilBarbero() {
   };
 
   const irInicio = () => {
-    navigation.navigate("HomeBarbero" as never);
+    navigation.navigate("homeBarbero" as never); 
   };
 
   const volver = () => {
@@ -128,7 +138,7 @@ export default function EditarPerfilBarbero() {
           <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Configuración</Text>
-        <TouchableOpacity>
+        <TouchableOpacity> 
           <Ionicons name="moon-outline" size={24} color="#000" />
         </TouchableOpacity>
       </View>
@@ -137,8 +147,8 @@ export default function EditarPerfilBarbero() {
         {/* FOTO DE PERFIL */}
         <View style={styles.profileSection}>
           <View style={styles.avatarContainer}>
-            {barbero.foto ? (
-              <Image source={{ uri: barbero.foto }} style={styles.avatar} />
+            {barbero.fotoPerfil ? ( 
+              <Image source={{ uri: barbero.fotoPerfil }} style={styles.avatar} />
             ) : (
               <View style={[styles.avatar, styles.avatarPlaceholder]}>
                 <Ionicons name="person" size={50} color="#999" />
@@ -146,13 +156,14 @@ export default function EditarPerfilBarbero() {
             )}
             <TouchableOpacity style={styles.editIcon}>
               <View style={styles.editIconInner}>
-                <Text style={styles.editIconText}>J</Text>
+                {/* 💡  */}
+                <Ionicons name="camera" size={18} color="#fff" /> 
               </View>
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.nombre}>{barbero.nombre}</Text>
-          <Text style={styles.email}>{barbero.email}</Text>
+          <Text style={styles.nombre}>{barbero.usuario?.nombre || barbero.nombre}</Text>
+          <Text style={styles.email}>{email}</Text>
 
           <TouchableOpacity style={styles.linkButton}>
             <Text style={styles.linkText}>Donde dieguito</Text>
@@ -175,7 +186,7 @@ export default function EditarPerfilBarbero() {
 
           <TextInput
             style={styles.input}
-            placeholder="Contraseña"
+            placeholder="Contraseña (dejar vacío si no desea cambiar)"
             placeholderTextColor="#999"
             value={contrasena}
             onChangeText={setContrasena}
@@ -204,7 +215,7 @@ export default function EditarPerfilBarbero() {
 
         {/* ÚLTIMAS RESEÑAS  */}
         <View style={styles.resenasSection}>
-          <Text style={styles.resenasLabel}>Hace 5 días</Text>
+          <Text style={styles.resenasLabel}>Última reseña</Text>
 
           <View style={styles.resenaCard}>
             <View style={styles.resenaHeader}>
@@ -256,7 +267,7 @@ export default function EditarPerfilBarbero() {
         >
           <Ionicons name="create-outline" size={20} color="#fff" />
           <Text style={styles.btnEditarText}>
-            {guardando ? "Guardando..." : "Editar Perfil"}
+            {guardando ? "Guardando..." : "Guardar Cambios"}
           </Text>
         </TouchableOpacity>
       </View>

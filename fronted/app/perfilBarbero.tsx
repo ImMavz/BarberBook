@@ -11,11 +11,10 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import { getToken, getUsuario } from "../utils/authStorage";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native"; 
 import Header from "../components/header";
 import { useTheme } from "./context/ThemeContext";
 import { LightTheme, DarkTheme } from "./theme/theme";
-
 
 const API_URL = "http://192.168.80.14:3000";
 
@@ -29,32 +28,38 @@ export default function PerfilBarbero() {
   const { colors, toggleTheme, theme } = useTheme();
 
   const obtenerPerfil = async () => {
+    setLoading(true); 
     try {
       const token = await getToken();
+      if (!token) throw new Error("Token no encontrado");
 
       const res = await axios.get(`${API_URL}/barbers/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       setBarbero(res.data);
-      setResenas(res.data.resenas ?? []);
+
+      setResenas(res.data.resenas ?? []); 
+      
+      const u = await getUsuario();
+      setUsuario(u);
+
     } catch (error: any) {
       console.log("ERROR:", error?.response?.data ?? error?.message);
+      setBarbero(null);
       Alert.alert("Error", "No se pudo cargar el perfil");
     } finally {
       setLoading(false);
     }
   };
 
-  const cargarUsuario = async () => {
-    const u = await getUsuario();
-    setUsuario(u);
-  };
 
-  useEffect(() => {
-    cargarUsuario();
-    obtenerPerfil();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      obtenerPerfil();
+
+    }, [])
+  );
 
   const editarPerfil = () => navigation.navigate("editarPerfilBarbero" as never);
   const irInicio = () => navigation.navigate("homeBarbero" as never);
@@ -129,7 +134,7 @@ export default function PerfilBarbero() {
           </View>
 
           <Text style={[styles.nombre, { color: colors.text }]}>
-            {barbero.usuario?.nombre || "nombre"}
+            {barbero.usuario?.nombre || "Nombre Barbero"}
           </Text>
 
           <Text style={[styles.email, { color: colors.textSecondary }]}>
@@ -138,7 +143,7 @@ export default function PerfilBarbero() {
 
           <TouchableOpacity style={styles.linkButton}>
             <Text style={{ color: "#4A90E2", fontSize: 14 }}>
-              {usuario.barbershopName || "Barbershop"}
+              {usuario?.barbershopName || "Barbershop"}
             </Text>
           </TouchableOpacity>
 
@@ -150,7 +155,7 @@ export default function PerfilBarbero() {
             ]}
           >
             <Text style={[styles.ratingNumber, { color: colors.text }]}>
-              {barbero.rating || "4.8"}
+              {(barbero.rating || 4.8).toFixed(1)}
             </Text>
 
             <View style={styles.starsRow}>
@@ -166,7 +171,7 @@ export default function PerfilBarbero() {
             </View>
 
             <Text style={[styles.resenasCount, { color: colors.textSecondary }]}>
-              Basado en {resenas.length || 127} reseñas
+              Basado en {resenas.length || 0} reseñas
             </Text>
           </View>
         </View>
@@ -219,12 +224,15 @@ export default function PerfilBarbero() {
               </Text>
             </View>
           ))}
+          
+          {resenas.length > 3 && (
+            <TouchableOpacity style={styles.verTodasButton}>
+              <Text style={{ color: "#4A90E2", fontSize: 15, fontWeight: "600" }}>
+                Ver todas las reseñas
+              </Text>
+            </TouchableOpacity>
+          )}
 
-          <TouchableOpacity style={styles.verTodasButton}>
-            <Text style={{ color: "#4A90E2", fontSize: 15, fontWeight: "600" }}>
-              Ver todas las reseñas
-            </Text>
-          </TouchableOpacity>
         </View>
 
         <View style={{ height: 100 }} />

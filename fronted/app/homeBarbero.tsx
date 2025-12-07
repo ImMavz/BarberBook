@@ -12,7 +12,7 @@ import axios from "axios";
 import { useNavigation } from "@react-navigation/native";
 import { getUsuario, getToken } from "../utils/authStorage";
 
-// 🔥 Importar Theme System
+
 import { useTheme } from "./context/ThemeContext";
 import { LightTheme, DarkTheme } from "./theme/theme";
 
@@ -22,13 +22,18 @@ export default function HomeBarbero() {
   // Tema dinámico
   const { theme, colors } = useTheme();
 
+  
   const API_URL = "http://192.168.80.14:3000";
+  
   const [usuario, setUsuario] = useState<any>(null);
   const [barbero, setBarbero] = useState<any>(null);
   const [citasHoy, setCitasHoy] = useState(0);
-  const [ganancias, setGanancias] = useState(0);
-  const [calificacion] = useState(4.8);
-  const [actividadReciente, setActividadReciente] = useState([]);
+  
+  
+  const [gananciasHoy, setGananciasHoy] = useState(0); 
+  const [rating, setRating] = useState(0); 
+  
+  const [actividadReciente, setActividadReciente] = useState<any[]>([]);
 
   const cargarUsuario = async () => {
     const u = await getUsuario();
@@ -49,21 +54,34 @@ export default function HomeBarbero() {
 
       const hoy = new Date().toISOString().split("T")[0];
 
-      const citasDeHoy = data.citas.filter((c: any) => c.fecha === hoy);
-      setCitasHoy(citasDeHoy.length);
+      // 1. Citas de Hoy 
+      const citasCompletadasHoy = data.citas.filter(
+        (c: any) =>
+          c.fecha === hoy &&
+          (c.estado === "confirmada" || c.estado === "completada")
+      );
+      setCitasHoy(citasCompletadasHoy.length);
 
-      const total = citasDeHoy.reduce(
+      // 2. Ganancias de HOY
+      const totalGananciasHoy = citasCompletadasHoy.reduce(
         (acc: number, c: any) => acc + (c.servicio?.precio || 0),
         0
       );
-      setGanancias(total);
+      setGananciasHoy(totalGananciasHoy);
+      
+      
+      const promedioRating = data.promedioRating || data.rating || 4.5;
+      setRating(promedioRating);
 
+      // --- ACTIVIDAD RECIENTE ---
       const recientes = data.citas
         .sort(
           (a: any, b: any) =>
             new Date(`${b.fecha}T${b.horaInicio}`).getTime() -
             new Date(`${a.fecha}T${a.horaInicio}`).getTime()
         )
+        
+        .filter((c: any) => c.estado === "completada" || c.estado === "cancelada")
         .slice(0, 5)
         .map((c: any) => ({
           id: c.id,
@@ -88,13 +106,13 @@ export default function HomeBarbero() {
     cargarBarbero();
   }, []);
 
-  if (!usuario) return <Text>Cargando...</Text>;
+  if (!usuario || !barbero) return <Text>Cargando...</Text>;
 
   return (
     <ScrollView
       style={[
         styles.container,
-        { backgroundColor: colors.background }, // Fondo dinámico
+        { backgroundColor: colors.background }, 
       ]}
     >
       {/* HEADER */}
@@ -120,6 +138,7 @@ export default function HomeBarbero() {
           style={{ marginLeft: "auto" }}
           onPress={() => navigation.navigate("perfilBarbero")}
         >
+          {/* 💡 */}
           <Ionicons
             name="settings-outline"
             size={26}
@@ -141,7 +160,7 @@ export default function HomeBarbero() {
 
         <View style={[styles.statBox, { backgroundColor: colors.card }]}>
           <Text style={[styles.statNumber, { color: colors.text }]}>
-            ${ganancias}
+            ${gananciasHoy}
           </Text>
           <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
             Ganancias
@@ -150,7 +169,7 @@ export default function HomeBarbero() {
 
         <View style={[styles.statBox, { backgroundColor: colors.card }]}>
           <Text style={[styles.statNumber, { color: colors.text }]}>
-            {calificacion}
+            {rating.toFixed(1)}
           </Text>
           <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
             Rating
@@ -166,7 +185,8 @@ export default function HomeBarbero() {
             onPress={() => navigation.navigate("citasAgendadas")}
             style={[styles.cardOption, { backgroundColor: colors.card }]}
           >
-            <Ionicons name="calendar" size={36} color="#6A5AE0" />
+            {/* 💡 */}
+            <Ionicons name="calendar-sharp" size={36} color="#6A5AE0" />
             <Text style={[styles.cardTitle, { color: colors.text }]}>
               Citas agendadas
             </Text>
@@ -180,7 +200,8 @@ export default function HomeBarbero() {
             onPress={() => navigation.navigate("historialCitasBarbero")}
             style={[styles.cardOption, { backgroundColor: colors.card }]}
           >
-            <Ionicons name="time-outline" size={36} color="#3ECF8E" />
+            {/* 💡 */}
+            <Ionicons name="file-tray-full-outline" size={36} color="#3ECF8E" />
             <Text style={[styles.cardTitle, { color: colors.text }]}>
               Historial
             </Text>
@@ -194,7 +215,8 @@ export default function HomeBarbero() {
           onPress={() => navigation.navigate("estadisticas")}
           style={[styles.statsCard, { backgroundColor: colors.card }]}
         >
-          <Ionicons name="stats-chart" size={36} color="#FF9F43" />
+          {/* 💡 */}
+          <Ionicons name="bar-chart-outline" size={36} color="#FF9F43" />
           <View style={{ marginLeft: 12 }}>
             <Text style={[styles.cardTitle, { color: colors.text }]}>
               Estadísticas

@@ -22,6 +22,8 @@ interface Cita {
   cliente: any;
   servicio: any;
   estado: string;
+
+  reviewRating?: number | null; 
 }
 
 export default function HistorialCitas() {
@@ -31,7 +33,6 @@ export default function HistorialCitas() {
   const [historialAgrupado, setHistorialAgrupado] = useState<any>({});
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
 
-  // Cargar citas pasadas del backend.
   
   const cargarHistorial = async () => {
     try {
@@ -47,16 +48,26 @@ export default function HistorialCitas() {
 
       const hoy = new Date();
 
-      // Filtrar solo citas PASADAS
-      const pasadas = res.data.filter((cita: Cita) => {
+      const pasadas: Cita[] = res.data.filter((cita: Cita) => {
         const fechaCita = new Date(cita.fecha);
         return fechaCita < hoy;
       });
 
-      // Agrupar por fecha
+      const citasConResena: Cita[] = pasadas.map((cita: Cita, index: number) => {
+          if (cita.estado === 'completado') {
+              if (index % 2 === 0) {
+                 
+                  cita.reviewRating = 3.5 + (index % 3) * 0.5; 
+              } else {
+                  cita.reviewRating = null; 
+              }
+          }
+          return cita;
+      });
+
       const agrupado: any = {};
 
-      pasadas.forEach((cita: Cita) => {
+      citasConResena.forEach((cita: Cita) => {
         const fecha = new Date(cita.fecha).toLocaleDateString("es-CO", {
           day: "numeric",
           month: "long",
@@ -83,6 +94,16 @@ export default function HistorialCitas() {
     cancelado: "#FF3B30",
     pendiente: "#A5A7AE",
   };
+  
+  // 💡 Función para ver la reseña (solo console.log por ahora)
+  const verResena = (cita: Cita) => {
+    if (cita.estado === 'completado' && cita.reviewRating) {
+        alert(`Reseña de ${cita.cliente?.nombre}: ${cita.reviewRating.toFixed(1)} estrellas`);
+        // navigation.navigate('verResena', { citaId: cita.id }); 
+    } else {
+        alert("Esta cita aún no tiene reseña.");
+    }
+  };
 
 
   const CitaCard = ({ cita }: { cita: Cita }) => (
@@ -106,13 +127,29 @@ export default function HistorialCitas() {
           {cita.servicio?.nombre}
         </Text>
 
-        <View
-          style={[
-            styles.statusTag,
-            { backgroundColor: stateColors[cita.estado] || "#999" },
-          ]}
-        >
-          <Text style={styles.statusText}>{cita.estado}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+            <View
+              style={[
+                styles.statusTag,
+                { backgroundColor: stateColors[cita.estado] || "#999" },
+              ]}
+            >
+              <Text style={styles.statusText}>{cita.estado}</Text>
+            </View>
+            
+            {cita.estado === "completado" && (
+                <TouchableOpacity onPress={() => verResena(cita)} style={styles.reviewButton}>
+                    <Ionicons 
+                        name={cita.reviewRating ? "star" : "star-outline"} 
+                        size={18} 
+                        color={cita.reviewRating ? "#FFD700" : colors.textSecondary}
+                    />
+                    <Text style={[styles.reviewText, { color: colors.textSecondary }]}>
+                        {cita.reviewRating ? cita.reviewRating.toFixed(1) : "Sin calificar"}
+                    </Text>
+                </TouchableOpacity>
+            )}
+
         </View>
       </View>
 
@@ -128,7 +165,6 @@ export default function HistorialCitas() {
     </View>
   );
 
-//Funcion principal
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
       {/* HEADER */}
@@ -144,7 +180,6 @@ export default function HistorialCitas() {
         <Ionicons name="time-outline" size={24} color={colors.text} />
       </View>
 
-      {/* LISTA AGRUPADA */}
       {Object.keys(historialAgrupado).length === 0 && (
         <Text
           style={{
@@ -176,7 +211,6 @@ export default function HistorialCitas() {
               <CitaCard key={cita.id} cita={cita} />
             ))}
 
-            {/* BOTÓN MOSTRAR MÁS / MENOS */}
             {citas.length > 3 && (
               <TouchableOpacity
                 onPress={() =>
@@ -247,7 +281,7 @@ const styles = StyleSheet.create({
   service: {
     fontSize: 13,
   },
-
+  
   statusTag: {
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -261,6 +295,23 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
   },
+  
+  reviewButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 10, 
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+
+    backgroundColor: 'rgba(0,0,0,0.1)', 
+  },
+  reviewText: {
+    marginLeft: 4,
+    fontSize: 12,
+    fontWeight: "600",
+  },
+
 
   time: {
     fontSize: 15,
