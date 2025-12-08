@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Patch,
-  Delete,
-} from "@nestjs/common";
+import { Controller, Get, Post, Body, Param, Patch, Delete, Query } from "@nestjs/common";
 import { BarbershopsService } from "./barbershops.service";
 import { CreateBarbershopDto } from "./dto/create-barbershop.dto";
 import { UpdateBarbershopDto } from "./dto/update-barbershop.dto";
@@ -18,6 +10,12 @@ export class BarbershopsController {
   @Get()
   findAll() {
     return this.service.findAll();
+  }
+
+  // NUEVO: filtro de barberías
+  @Get("filter")
+  filter(@Query() query: any) {
+    return this.service.filter(query);
   }
 
   @Get(":id")

@@ -65,4 +65,59 @@ export class BarbershopsService {
     const barberia = await this.findOne(id);
     return this.repo.remove(barberia);
   }
+
+  async filter(filters: any) {
+    const {
+      nombre,
+      servicio,
+      precioMin,
+      precioMax,
+      duracionMin,
+      duracionMax,
+    } = filters;
+
+    const query = this.repo
+      .createQueryBuilder("barberias")
+      .leftJoinAndSelect("barberias.dueño", "dueño")
+      .leftJoinAndSelect("barberias.barberos", "barberos")
+      .leftJoinAndSelect("barberias.reseñas", "reseñas")
+      .leftJoinAndSelect("barberias.servicios", "servicios");
+
+    // Filtro: nombre barbería
+    if (nombre && nombre.trim() !== "") {
+      query.andWhere("barberias.nombre ILIKE :nombre", {
+        nombre: `%${nombre}%`,
+      });
+    }
+
+    // Filtro: nombre del servicio
+    if (servicio && servicio.trim() !== "") {
+      query.andWhere("servicios.nombre ILIKE :servicio", {
+        servicio: `%${servicio}%`,
+      });
+    }
+
+    // Filtros numéricos
+    if (precioMin && !isNaN(precioMin)) {
+      query.andWhere("servicios.precio >= :precioMin", { precioMin });
+    }
+
+    if (precioMax && !isNaN(precioMax)) {
+      query.andWhere("servicios.precio <= :precioMax", { precioMax });
+    }
+
+    if (duracionMin && !isNaN(duracionMin)) {
+      query.andWhere("servicios.duracion >= :duracionMin", { duracionMin });
+    }
+
+    if (duracionMax && !isNaN(duracionMax)) {
+      query.andWhere("servicios.duracion <= :duracionMax", { duracionMax });
+    }
+
+    // Importante para evitar barberías duplicadas
+    query.distinct(true);
+
+    return query.getMany();
+  }
+
 }

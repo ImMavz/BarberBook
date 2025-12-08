@@ -27,7 +27,8 @@ export default function HomeCliente() {
   const navigation = useNavigation<Nav>();
   const { colors, theme, toggleTheme } = useTheme();
 
-  const API_URL = "http://192.168.80.14:3000";
+const API_URL = "http://10.76.47.96:3000";
+//const API_URL = "http://192.168.80.14:3000";
 
   const [usuario, setUsuario] = useState<any>(null);
   const [proximaCita, setProximaCita] = useState<any>(null);
