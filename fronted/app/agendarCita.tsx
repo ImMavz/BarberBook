@@ -15,7 +15,8 @@ import { getToken, getUsuario } from "../utils/authStorage";
 import { useRoute } from "@react-navigation/native";
 import { useTheme } from "./context/ThemeContext";
 
-const API_URL = "http://192.168.80.14:3000";
+const API_URL = "http://10.76.47.96:3000";
+//const API_URL = "http://192.168.80.14:3000";
 
 export default function agendarCita() {
   const route = useRoute();
