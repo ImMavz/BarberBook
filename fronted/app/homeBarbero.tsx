@@ -11,10 +11,9 @@ import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import { useNavigation } from "@react-navigation/native";
 import { getUsuario, getToken } from "../utils/authStorage";
-
-
 import { useTheme } from "./context/ThemeContext";
 import { LightTheme, DarkTheme } from "./theme/theme";
+import { API_BASE_URL } from "@env";
 
 export default function HomeBarbero() {
   const navigation = useNavigation();
@@ -23,7 +22,7 @@ export default function HomeBarbero() {
   const { theme, colors } = useTheme();
 
   
-  const API_URL = "http://192.168.80.14:3000";
+  const API_URL = API_BASE_URL;
   
   const [usuario, setUsuario] = useState<any>(null);
   const [barbero, setBarbero] = useState<any>(null);

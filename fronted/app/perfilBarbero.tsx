@@ -15,8 +15,9 @@ import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import Header from "../components/header";
 import { useTheme } from "./context/ThemeContext";
 import { LightTheme, DarkTheme } from "./theme/theme";
+import { API_BASE_URL } from "@env";
 
-const API_URL = "http://192.168.80.14:3000";
+const API_URL = API_BASE_URL;
 
 export default function PerfilBarbero() {
   const navigation = useNavigation();

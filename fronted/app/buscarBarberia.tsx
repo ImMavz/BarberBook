@@ -13,9 +13,9 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import axios from "axios";
 import { useTheme } from "./context/ThemeContext";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { API_BASE_URL } from "@env";
 
-const API_URL = "http://10.76.47.96:3000";
-//const API_URL = "http://192.168.80.14:3000";
+const API_URL = API_BASE_URL;
 
 interface Barberia {
   id: number;

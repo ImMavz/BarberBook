@@ -11,8 +11,9 @@ import {
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import axios from "axios";
 import { getToken, getUsuario } from "../utils/authStorage";
+import { API_BASE_URL } from "@env";
 
-const API_URL = "http://192.168.1.32:3000";
+const API_URL = API_BASE_URL;
 
 export default function ConfirmacionServicio() {
   const [cita, setCita] = useState<any>(null);

@@ -13,10 +13,11 @@ import axios from "axios";
 import { BarChart, PieChart, LineChart } from "react-native-chart-kit";
 import { getToken, getUsuario } from "../utils/authStorage";
 import { useTheme } from "./context/ThemeContext";
+import { API_BASE_URL } from "@env";
 
 const screenWidth = Dimensions.get("window").width;
 
-const API_URL = "http://192.168.80.14:3000";
+const API_URL = API_BASE_URL;
 
 interface StatsBarbero {
   reservas: number;

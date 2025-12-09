@@ -9,10 +9,12 @@ import React, { useEffect, useState } from "react";
 import Icon from "react-native-vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
+import { API_BASE_URL } from "@env";
 
 export default function SettingsBarberShop() {
   const router = useRouter();
   const [owner, setOwner] = useState<any>(null);
+  const API_URL = API_BASE_URL;
 
   // Obtener datos del dueño desde el backend con el token
   const fetchOwner = async () => {
@@ -24,7 +26,7 @@ export default function SettingsBarberShop() {
         return;
       }
 
-      const response = await fetch("http://192.168.1.32:3000/users/me", {
+      const response = await fetch(`${API_URL}/users/me`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
