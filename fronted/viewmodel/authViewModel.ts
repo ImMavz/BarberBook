@@ -1,7 +1,7 @@
 import axios from "axios";
 import { useState } from "react";
 import { saveToken, saveUsuario } from "../utils/authStorage";
-import { API_BASE_URL } from "@env";
+import { API_BASE_URL } from "../config/env";
 
 export const useAuthViewModel = () => {
   const [loading, setLoading] = useState(false);

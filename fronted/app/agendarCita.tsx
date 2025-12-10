@@ -14,7 +14,7 @@ import axios from "axios";
 import { getToken, getUsuario } from "../utils/authStorage";
 import { useRoute } from "@react-navigation/native";
 import { useTheme } from "./context/ThemeContext";
-import { API_BASE_URL } from "@env";
+import { API_BASE_URL } from "../config/env";
 
 const API_URL = API_BASE_URL;
 
@@ -276,3 +276,5 @@ const styles = StyleSheet.create({
   },
   submitText: { color: "#fff", fontWeight: "700", fontSize: 18 },
 });
+
+

@@ -13,7 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import { getToken, getUsuario } from "../utils/authStorage";
 import { useNavigation } from "@react-navigation/native";
-import { API_BASE_URL } from "@env";
+import { API_BASE_URL } from "../config/env";
 
 const API_URL = API_BASE_URL; 
 
@@ -502,3 +502,4 @@ const styles = StyleSheet.create({
     backgroundColor: "#F3F6FA",
   },
 });
+

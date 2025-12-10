@@ -13,7 +13,7 @@ import { useNavigation } from "@react-navigation/native";
 import { getUsuario, getToken } from "../utils/authStorage";
 import { useTheme } from "./context/ThemeContext";
 import { LightTheme, DarkTheme } from "./theme/theme";
-import { API_BASE_URL } from "@env";
+import { API_BASE_URL } from "../config/env";
 
 export default function HomeBarbero() {
   const navigation = useNavigation();
@@ -335,3 +335,4 @@ const styles = StyleSheet.create({
   activityDesc: { fontSize: 12 },
   activityTime: { fontSize: 11 },
 });
+

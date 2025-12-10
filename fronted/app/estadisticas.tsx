@@ -13,7 +13,7 @@ import axios from "axios";
 import { BarChart, PieChart, LineChart } from "react-native-chart-kit";
 import { getToken, getUsuario } from "../utils/authStorage";
 import { useTheme } from "./context/ThemeContext";
-import { API_BASE_URL } from "@env";
+import { API_BASE_URL } from "../config/env";
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -422,3 +422,5 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
 });
+
+

@@ -9,7 +9,7 @@ import React, { useEffect, useState } from "react";
 import Icon from "react-native-vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import { API_BASE_URL } from "@env";
+import { API_BASE_URL } from "../config/env";
 
 export default function SettingsBarberShop() {
   const router = useRouter();
@@ -195,3 +195,5 @@ const styles = StyleSheet.create({
     color: "#1E3A8A",
   },
 });
+
+

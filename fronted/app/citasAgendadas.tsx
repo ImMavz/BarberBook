@@ -17,7 +17,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 // Tema dinámico (Modo oscuro o claro)
 import { useTheme } from "./context/ThemeContext";
-import { API_BASE_URL } from "@env";
+import { API_BASE_URL } from "../config/env";
 
 type EstadoCita = "completado" | "en progreso" | "pendiente";
 
@@ -407,3 +407,5 @@ const modalStyles = StyleSheet.create({
 });
 
 export default CitasAgendadas;
+
+

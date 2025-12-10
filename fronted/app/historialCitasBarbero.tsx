@@ -12,7 +12,7 @@ import axios from "axios";
 import { useNavigation } from "@react-navigation/native";
 import { getToken, getUsuario } from "../utils/authStorage";
 import { useTheme } from "./context/ThemeContext";
-import { API_BASE_URL } from "@env";
+import { API_BASE_URL } from "../config/env";
 
 const API_URL = API_BASE_URL;
 
@@ -325,3 +325,4 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 });
+

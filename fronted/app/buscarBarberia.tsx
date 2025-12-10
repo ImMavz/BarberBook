@@ -13,7 +13,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import axios from "axios";
 import { useTheme } from "./context/ThemeContext";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { API_BASE_URL } from "@env";
+import { API_BASE_URL } from "../config/env";
 
 const API_URL = API_BASE_URL;
 
@@ -532,3 +532,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
+
+

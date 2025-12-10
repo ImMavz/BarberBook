@@ -14,7 +14,7 @@ import { getToken, getUsuario } from "../utils/authStorage";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useTheme } from "./context/ThemeContext";
-import { API_BASE_URL } from "@env";
+import { API_BASE_URL } from "../config/env";
 
 type RootStackParamList = {
   buscarBarberia: undefined;
@@ -274,3 +274,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 });
+
+
