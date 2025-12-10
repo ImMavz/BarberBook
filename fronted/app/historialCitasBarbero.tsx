@@ -12,8 +12,9 @@ import axios from "axios";
 import { useNavigation } from "@react-navigation/native";
 import { getToken, getUsuario } from "../utils/authStorage";
 import { useTheme } from "./context/ThemeContext";
+import { API_BASE_URL } from "../config/env";
 
-const API_URL = "http://192.168.80.14:3000";
+const API_URL = API_BASE_URL;
 
 interface Cita {
   id: number;
@@ -324,3 +325,4 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 });
+

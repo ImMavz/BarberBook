@@ -11,8 +11,9 @@ import {
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import axios from "axios";
 import { getToken, getUsuario } from "../utils/authStorage";
+import { API_BASE_URL } from "../config/env";
 
-const API_URL = "http://192.168.1.32:3000";
+const API_URL = API_BASE_URL;
 
 export default function ConfirmacionServicio() {
   const [cita, setCita] = useState<any>(null);
@@ -221,3 +222,5 @@ const styles = StyleSheet.create({
   btnText: { color: "#fff", fontWeight: "700", textAlign: "center" },
   loading: { flex: 1, justifyContent: "center", alignItems: "center" },
 });
+
+

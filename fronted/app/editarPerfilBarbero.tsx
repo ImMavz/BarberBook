@@ -13,8 +13,9 @@ import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import { getToken, getUsuario } from "../utils/authStorage";
 import { useNavigation } from "@react-navigation/native";
+import { API_BASE_URL } from "../config/env";
 
-const API_URL = "http://192.168.80.14:3000"; 
+const API_URL = API_BASE_URL; 
 
 export default function EditarPerfilBarbero() {
   const navigation = useNavigation();
@@ -501,3 +502,4 @@ const styles = StyleSheet.create({
     backgroundColor: "#F3F6FA",
   },
 });
+

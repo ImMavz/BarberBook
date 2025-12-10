@@ -1,11 +1,13 @@
 import axios from "axios";
 import { useState } from "react";
 import { saveToken, saveUsuario } from "../utils/authStorage";
+import { API_BASE_URL } from "../config/env";
 
 export const useAuthViewModel = () => {
   const [loading, setLoading] = useState(false);
  
-  const API_URL = "http://10.76.47.96:3000";
+  const API_URL = API_BASE_URL;
+  // const API_URL = "http://192.168.1.8:3000";
 //const API_URL = "http://192.168.80.14:3000";
 //const API_URL = "http://192.168.1.32:3000" //API Juanito"
 

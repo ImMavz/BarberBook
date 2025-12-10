@@ -14,9 +14,9 @@ import axios from "axios";
 import { getToken, getUsuario } from "../utils/authStorage";
 import { useRoute } from "@react-navigation/native";
 import { useTheme } from "./context/ThemeContext";
+import { API_BASE_URL } from "../config/env";
 
-const API_URL = "http://10.76.47.96:3000";
-//const API_URL = "http://192.168.80.14:3000";
+const API_URL = API_BASE_URL;
 
 export default function agendarCita() {
   const route = useRoute();
@@ -276,3 +276,5 @@ const styles = StyleSheet.create({
   },
   submitText: { color: "#fff", fontWeight: "700", fontSize: 18 },
 });
+
+

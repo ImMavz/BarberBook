@@ -14,6 +14,7 @@ import { getToken, getUsuario } from "../utils/authStorage";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useTheme } from "./context/ThemeContext";
+import { API_BASE_URL } from "../config/env";
 
 type RootStackParamList = {
   buscarBarberia: undefined;
@@ -27,9 +28,8 @@ export default function HomeCliente() {
   const navigation = useNavigation<Nav>();
   const { colors, theme, toggleTheme } = useTheme();
 
-const API_URL = "http://10.76.47.96:3000";
-//const API_URL = "http://192.168.80.14:3000";
-
+  const API_URL = API_BASE_URL;
+  
   const [usuario, setUsuario] = useState<any>(null);
   const [proximaCita, setProximaCita] = useState<any>(null);
 
@@ -274,3 +274,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 });
+
+

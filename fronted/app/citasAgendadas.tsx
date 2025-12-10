@@ -17,6 +17,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 // Tema dinámico (Modo oscuro o claro)
 import { useTheme } from "./context/ThemeContext";
+import { API_BASE_URL } from "../config/env";
 
 type EstadoCita = "completado" | "en progreso" | "pendiente";
 
@@ -36,7 +37,7 @@ type RootStackParamList = {
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-const API_URL = "http://192.168.80.14:3000";
+const API_URL = API_BASE_URL;
 
 const CitasAgendadas = () => {
   const navigation = useNavigation<Nav>();
@@ -406,3 +407,5 @@ const modalStyles = StyleSheet.create({
 });
 
 export default CitasAgendadas;
+
+
