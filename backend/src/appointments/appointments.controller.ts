@@ -28,9 +28,11 @@ export class AppointmentsController {
 
   // 👉 Obtener citas de un cliente
   @UseGuards(JwtAuthGuard)
-  @Get('cliente/:id')
-  getByCliente(@Param('id') id: number) {
-    return this.service.findByCliente(Number(id));
+  @Get('cliente')
+  getByCliente(@Request() req) {
+    console.log("👉 Token usuario:", req.user);
+    const clienteId = req.user.id; // Extraído del token
+    return this.service.findByCliente(clienteId);
   }
 
   // 👉 Obtener citas de un barbero

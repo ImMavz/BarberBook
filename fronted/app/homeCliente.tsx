@@ -31,68 +31,114 @@ export default function HomeCliente() {
   const API_URL = API_BASE_URL;
   
   const [usuario, setUsuario] = useState<any>(null);
-  const [proximaCita, setProximaCita] = useState<any>(null);
+  const [citas, setCitas] = useState<any[]>([]);
 
-  // ======================================================
-  // Cargar usuario y cita
-  // ======================================================
+  // Filtros disponibles
+  const [filtro, setFiltro] = useState<"hoy" | "mañana" | "semana" | "mes">("hoy");
+
+  const TITULOS = {
+    hoy: "Citas de Hoy",
+    mañana: "Citas de Mañana",
+    semana: "Citas de Esta Semana",
+    mes: "Citas de Este Mes",
+  };
+
+  // ====================================================
+  // Cargar usuario + citas
+  // ====================================================
   useEffect(() => {
     (async () => {
       try {
         const u = await getUsuario();
-
         if (!u) {
           Alert.alert("Error", "No hay usuario logueado");
           return;
         }
-
         setUsuario(u);
-        cargarProximaCita(u.id);
+        cargarCitas(u.id, "hoy");
       } catch (e) {
         console.log("❌ Error cargando usuario:", e);
       }
     })();
   }, []);
 
-  const cargarProximaCita = async (clienteId: number) => {
+  // ====================================================
+  // Cargar citas del cliente
+  // ====================================================
+  const cargarCitas = async (
+    clienteId: number,
+    rango: "hoy" | "mañana" | "semana" | "mes"
+  ) => {
     try {
       const token = await getToken();
-      if (!token) return;
-
-      const res = await axios.get(`${API_URL}/appointments/cliente/${clienteId}`, {
+      const res = await axios.get(`${API_URL}/appointments/cliente`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!res.data || res.data.length === 0) {
-        setProximaCita(null);
-        return;
-      }
+      let filtradas = filtrarPorRango(res.data, rango);
+      filtradas = ordenarPorFechaYHora(filtradas);
 
-      // Ordenamos por fecha y hora
-      const ordenadas = res.data.sort((a: any, b: any) => {
-        const fechaA = new Date(`${a.fecha}T${a.horaInicio}`);
-        const fechaB = new Date(`${b.fecha}T${b.horaInicio}`);
-        return fechaA.getTime() - fechaB.getTime();
-      });
-
-      setProximaCita(ordenadas[0]);
-    } catch (error) {
-      console.log("❌ Error cargando próxima cita:", error);
+      setFiltro(rango);
+      setCitas(filtradas);
+    } catch (err) {
+      console.log("❌ Error cargando citas:", err);
     }
   };
 
-  // ======================================================
-  // ICONO DEL TEMA
-  // ======================================================
+  // ====================================================
+  // Filtrado tipo CitasAgendadas
+  // ====================================================
+  const filtrarPorRango = (citas: any[], rango: any) => {
+    const hoy = new Date();
+    const mañana = new Date(hoy);
+    mañana.setDate(hoy.getDate() + 1);
+
+    const en7dias = new Date(hoy);
+    en7dias.setDate(hoy.getDate() + 7);
+
+    const en30dias = new Date(hoy);
+    en30dias.setDate(hoy.getDate() + 30);
+
+    return citas.filter((c) => {
+      const fechaCita = new Date(c.fecha + "T00:00:00");
+      switch (rango) {
+        case "hoy":
+          return fechaCita.toDateString() === hoy.toDateString();
+        case "mañana":
+          return fechaCita.toDateString() === mañana.toDateString();
+        case "semana":
+          return fechaCita >= hoy && fechaCita <= en7dias;
+        case "mes":
+          return fechaCita >= hoy && fechaCita <= en30dias;
+      }
+    });
+  };
+
+  const ordenarPorFechaYHora = (citas: any[]) => {
+    return citas.sort((a, b) => {
+    const f1 = new Date(`${a.fecha}T${a.horaInicio}:00`);
+    const f2 = new Date(`${b.fecha}T${b.horaInicio}:00`);
+      return f1.getTime() - f2.getTime();
+    });
+  };
+
+  // Formatos
+  const formatearFecha = (fecha: string) => {
+    const d = new Date(fecha + "T00:00:00");
+    return d.toLocaleDateString("es-CO", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    });
+  };
+
+
   const themeIcon = theme === "dark" ? "sunny-outline" : "moon-outline";
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
-      
       {/* HEADER */}
       <View style={styles.header}>
-
-        {/* TIJERA — ahora usa colors.text */}
         <Ionicons name="cut-outline" size={32} color={colors.text} />
 
         <View style={{ marginLeft: 10 }}>
@@ -100,22 +146,13 @@ export default function HomeCliente() {
             {usuario ? `Bienvenido, ${usuario.nombre}` : "Cargando..."}
           </Text>
           <Text style={[styles.welcome, { color: colors.textSecondary }]}>
-            Agenda cita con el peluquero
+            Agenda citas rápidamente
           </Text>
         </View>
 
-        {/* BOTÓN LUNA/SOL */}
-        <TouchableOpacity onPress={toggleTheme} style={{ marginLeft: "auto", marginRight: 10 }}>
+        <TouchableOpacity onPress={toggleTheme} style={{ marginLeft: "auto" }}>
           <Ionicons name={themeIcon} size={28} color={colors.text} />
         </TouchableOpacity>
-
-        {/* BOTÓN HISTORIAL */}
-        <TouchableOpacity onPress={() => navigation.navigate("historialCliente")}>
-          <View style={[styles.historialButton, { backgroundColor: colors.primary }]}>
-            <Text style={{ color: "#fff", fontWeight: "600" }}>Historial</Text>
-          </View>
-        </TouchableOpacity>
-
       </View>
 
       {/* BUSCADOR */}
@@ -129,59 +166,61 @@ export default function HomeCliente() {
         </Text>
       </TouchableOpacity>
 
-      {/* CITAS AGENDADAS */}
-      <Text style={[styles.sectionTitle, { color: colors.text }]}>Citas agendadas</Text>
-
-      {proximaCita ? (
-        <View style={[styles.citaBox, { backgroundColor: colors.card }]}>
-
-          {/* Icono tijera también dinámico */}
-          <Ionicons name="cut-outline" size={26} color={colors.text} />
-
-          <View style={{ marginLeft: 10 }}>
-            <Text style={[styles.citaNombre, { color: colors.text }]}>
-              {proximaCita.barbero?.usuario?.nombre || "Mi barbero"}
-            </Text>
-            <Text style={[styles.citaServicio, { color: colors.textSecondary }]}>
-              {proximaCita.servicio?.nombre || "Servicio"}
-            </Text>
-          </View>
-
-          <Text style={[styles.citaTiempo, { color: colors.textSecondary }]}>Próxima</Text>
-        </View>
-      ) : (
-        <Text style={{ color: colors.textSecondary, marginBottom: 15 }}>
-          No tienes citas próximas
-        </Text>
-      )}
-
-      {/* PASOS */}
+      {/* TÍTULO SEGÚN FILTRO */}
       <Text style={[styles.sectionTitle, { color: colors.text }]}>
-        ¿Cómo usar BarberBook?
+        {TITULOS[filtro]}
       </Text>
 
-      {[1, 2, 3].map((num) => (
-        <View key={num} style={[styles.stepCard, { backgroundColor: colors.card }]}>
-          <View style={[styles.stepCircle, { backgroundColor: colors.cardSec }]}>
-            <Text style={[styles.stepNumber, { color: colors.text }]}>{num}</Text>
+      {/* Citas */}
+      {citas.length === 0 ? (
+        <Text style={{ color: colors.textSecondary, marginBottom: 15 }}>
+          No tienes citas en este rango
+        </Text>
+      ) : (
+        citas.map((cita, index) => (
+          <View key={index} style={[styles.citaBox, { backgroundColor: colors.card }]}>
+            <Ionicons name="cut-outline" size={26} color={colors.text} />
+            <View style={{ marginLeft: 10 }}>
+              <Text style={[styles.citaNombre, { color: colors.text }]}>
+                {cita.barbero?.barberia?.nombre}
+              </Text>
+
+              <Text style={[styles.citaServicio, { color: colors.textSecondary }]}>
+                Barbero: {cita.barbero?.usuario?.nombre}
+              </Text>
+
+              <Text style={[styles.citaServicio, { color: colors.textSecondary }]}>
+                Servicio: {cita.servicio?.nombre}
+              </Text>
+
+              <Text style={[styles.citaFecha, { color: colors.textSecondary }]}>
+                {formatearFecha(cita.fecha)}
+              </Text>
+
+              <Text style={[styles.citaHora, { color: colors.textSecondary }]}>
+                {cita.horaInicio}
+              </Text>
+            </View>
           </View>
+        ))
+      )}
 
-          <View style={{ marginLeft: 10 }}>
-            <Text style={[styles.stepTitle, { color: colors.text }]}>
-              {num === 1 && "Busca una peluquería"}
-              {num === 2 && "Escoge el servicio"}
-              {num === 3 && "Separa tu cita"}
+      {/* FILTROS */}
+      <View style={styles.filtros}>
+        {["hoy", "mañana", "semana", "mes"].map((r) => (
+          <TouchableOpacity
+            key={r}
+            onPress={() => cargarCitas(usuario.id, r as any)}
+          >
+            <Text style={{ 
+              color: colors.text, 
+              fontWeight: filtro === r ? "700" : "400" 
+            }}>
+              {r.toUpperCase()}
             </Text>
-
-            <Text style={[styles.stepDesc, { color: colors.textSecondary }]}>
-              {num === 1 && "Pon el nombre o ubicación en el buscador"}
-              {num === 2 && "Selecciona el servicio disponible que tengan"}
-              {num === 3 && "Escoge día y hora para confirmar"}
-            </Text>
-          </View>
-
-        </View>
-      ))}
+          </TouchableOpacity>
+        ))}
+      </View>
 
       <View style={{ height: 35 }} />
     </ScrollView>
@@ -189,31 +228,10 @@ export default function HomeCliente() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 20,
-  },
-
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 35,
-  },
-
-  historialButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    marginLeft: 1,
-  },
-
-  clientName: {
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  welcome: {
-    fontSize: 14,
-  },
-
+  container: { paddingHorizontal: 20 },
+  header: { flexDirection: "row", alignItems: "center", paddingVertical: 35 },
+  clientName: { fontSize: 20, fontWeight: "700" },
+  welcome: { fontSize: 14 },
   searchBox: {
     flexDirection: "row",
     alignItems: "center",
@@ -221,14 +239,7 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     elevation: 2,
   },
-
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    marginTop: 25,
-    marginBottom: 10,
-  },
-
+  sectionTitle: { fontSize: 18, fontWeight: "700", marginTop: 25, marginBottom: 10 },
   citaBox: {
     flexDirection: "row",
     padding: 15,
@@ -236,43 +247,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 10,
   },
-
-  citaNombre: {
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  citaServicio: {
-    fontSize: 12,
-  },
-  citaTiempo: {
-    marginLeft: "auto",
-    fontSize: 12,
-  },
-
-  stepCard: {
+  citaNombre: { fontSize: 16, fontWeight: "700" },
+  citaServicio: { fontSize: 13 },
+  citaFecha: { marginTop: 4, fontSize: 12 },
+  citaHora: { fontSize: 12 },
+  filtros: {
     flexDirection: "row",
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 12,
-    alignItems: "center",
-  },
-  stepCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  stepNumber: {
-    fontWeight: "700",
-  },
-  stepTitle: {
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  stepDesc: {
-    fontSize: 12,
+    justifyContent: "space-between",
+    paddingHorizontal: 10,
+    marginTop: 5,
+    marginBottom: 20,
   },
 });
-
-

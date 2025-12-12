@@ -98,23 +98,52 @@ export class AppointmentsService {
   // 📌 CITAS DE UN CLIENTE
   // ==========================================
   async findByCliente(clienteId: number) {
-    return this.repo.find({
+    const citas = await this.repo.find({
       where: { cliente: { id: clienteId } },
-      relations: ['barbero', 'servicio'],
-      order: { fecha: 'ASC' },
+      relations: [
+        "barbero",
+        "barbero.usuario",
+        "barbero.barberia",
+        "servicio"
+      ],
+      order: { fecha: "ASC" },
     });
+
+    return citas.map(c => this.cleanAppointmentDates(c));
   }
+
+
+
+
+  cleanAppointmentDates(cita: Appointment) {
+    const fecha = String(cita.fecha); // 🔥 siempre string
+    const horaInicio = (cita.horaInicio ?? "00:00:00").slice(0, 8);
+    const horaFin = (cita.horaFin ?? "00:00:00").slice(0, 8);
+
+    return {
+      ...cita,
+      fecha,
+      horaInicio,
+      horaFin,
+    };
+  }
+
+
+
 
   // ==========================================
   // 📌 CITAS DE UN BARBERO
   // ==========================================
   async findByBarbero(barberoId: number) {
-    return this.repo.find({
+    const citas = await this.repo.find({
       where: { barbero: { id: barberoId } },
       relations: ['cliente', 'servicio'],
       order: { fecha: 'ASC' },
     });
+
+    return citas.map(c => this.cleanAppointmentDates(c));
   }
+
 
   // ==========================================
   // 📌 OBTENER UNA CITA POR ID

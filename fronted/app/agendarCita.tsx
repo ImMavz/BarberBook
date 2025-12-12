@@ -18,45 +18,38 @@ import { API_BASE_URL } from "../config/env";
 
 const API_URL = API_BASE_URL;
 
-export default function agendarCita() {
+export default function AgendarCita() {
   const route = useRoute();
   const { barberiaId } = route.params as { barberiaId: number };
 
-  const { colors } = useTheme(); // 🎨 THEME
+  const { colors } = useTheme();
 
   const [barberos, setBarberos] = useState<any[]>([]);
   const [servicios, setServicios] = useState<any[]>([]);
-
   const [selectedBarbero, setSelectedBarbero] = useState<number | null>(null);
   const [selectedServicio, setSelectedServicio] = useState<number | null>(null);
 
   const [selectedFecha, setSelectedFecha] = useState<string | null>(null);
   const [showPicker, setShowPicker] = useState(false);
 
-  const [horarioSeleccionado, setHorarioSeleccionado] = useState<string | null>(null);
+  const [horarioSeleccionado, setHorarioSeleccionado] = useState<string | null>(
+    null
+  );
 
   const horarios = ["10:00", "11:00", "14:00", "15:00", "16:00"];
 
-  const [usuarioLogueado, setUsuarioLogueado] = useState<any>(null);
-
-  // Cargar usuario + datos
+  // Cargar datos iniciales
   useEffect(() => {
-    cargarUsuario();
     cargarBarberos();
     cargarServicios();
   }, []);
-
-  const cargarUsuario = async () => {
-    const user = await getUsuario();
-    setUsuarioLogueado(user);
-  };
 
   const cargarBarberos = async () => {
     try {
       const res = await axios.get(`${API_URL}/barbers/barbershop/${barberiaId}`);
       setBarberos(res.data);
-    } catch (err) {
-      console.log("❌ ERROR /barbers/barbershop:", err.response?.data);
+    } catch (err: any) {
+      console.log("❌ ERROR /barbers:", err.response?.data);
     }
   };
 
@@ -64,12 +57,14 @@ export default function agendarCita() {
     try {
       const res = await axios.get(`${API_URL}/services/barbershop/${barberiaId}`);
       setServicios(res.data);
-    } catch (err) {
-      console.log("❌ ERROR /services/barbershop:", err.response?.data);
+    } catch (err: any) {
+      console.log("❌ ERROR /services:", err.response?.data);
     }
   };
 
-  // DatePicker
+  // ───────────────────────────────────────────────
+  // 📌 Corregido: DatePicker con formato YYYY-MM-DD
+  // ───────────────────────────────────────────────
   const onChangeFecha = (event: any, selectedDate?: Date) => {
     setShowPicker(false);
     if (selectedDate) {
@@ -80,14 +75,20 @@ export default function agendarCita() {
     }
   };
 
+  // ───────────────────────────────────────────────
+  // ⏱ Función corregida: SIEMPRE devuelve HH:mm:ss
+  // ───────────────────────────────────────────────
   const sumarMinutos = (hora: string, minutos: number): string => {
-    const [h, m] = hora.split(":").map((n) => parseInt(n));
-    const fecha = new Date();
-    fecha.setHours(h, m + minutos, 0);
-    return fecha.toTimeString().slice(0, 5);
+    const [h, m] = hora.split(":").map(Number);
+    const fecha = new Date(2000, 0, 1, h, m + minutos, 0);
+    const hh = String(fecha.getHours()).padStart(2, "0");
+    const mm = String(fecha.getMinutes()).padStart(2, "0");
+    return `${hh}:${mm}:00`; // 🔥 formato estandarizado
   };
 
-  // Crear la cita
+  // ───────────────────────────────────────────────
+  // 🎯 CREAR LA CITA
+  // ───────────────────────────────────────────────
   const crearCita = async () => {
     if (!selectedBarbero || !selectedServicio || !selectedFecha || !horarioSeleccionado) {
       Alert.alert("Faltan datos", "Debes completar todos los campos");
@@ -109,14 +110,14 @@ export default function agendarCita() {
       const body = {
         id_barbero: selectedBarbero,
         id_servicio: selectedServicio,
-        fecha: selectedFecha,
-        horaInicio: horarioSeleccionado,
-        horaFin: horaFinCalculada,
+        fecha: selectedFecha,                   // formato correcto
+        horaInicio: horarioSeleccionado + ":00", // 🔥 ahora con segundos
+        horaFin: horaFinCalculada,              // 🔥 HH:mm:ss
       };
 
       console.log("📤 Enviando cita:", body);
 
-      const res = await axios.post(`${API_URL}/appointments`, body, {
+      await axios.post(`${API_URL}/appointments`, body, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -143,7 +144,11 @@ export default function agendarCita() {
             style={[
               styles.optionBox,
               { backgroundColor: colors.card },
-              selectedBarbero === b.id && { backgroundColor: colors.primary + "33", borderColor: colors.primary, borderWidth: 2 },
+              selectedBarbero === b.id && {
+                backgroundColor: colors.primary + "33",
+                borderColor: colors.primary,
+                borderWidth: 2,
+              },
             ]}
             onPress={() => setSelectedBarbero(b.id)}
           >
@@ -167,7 +172,11 @@ export default function agendarCita() {
             style={[
               styles.optionBox,
               { backgroundColor: colors.card },
-              selectedServicio === s.id && { backgroundColor: colors.primary + "33", borderColor: colors.primary, borderWidth: 2 },
+              selectedServicio === s.id && {
+                backgroundColor: colors.primary + "33",
+                borderColor: colors.primary,
+                borderWidth: 2,
+              },
             ]}
             onPress={() => setSelectedServicio(s.id)}
           >
@@ -212,7 +221,11 @@ export default function agendarCita() {
             style={[
               styles.horaBox,
               { backgroundColor: colors.card },
-              horarioSeleccionado === h && { backgroundColor: colors.primary + "33", borderColor: colors.primary, borderWidth: 2 },
+              horarioSeleccionado === h && {
+                backgroundColor: colors.primary + "33",
+                borderColor: colors.primary,
+                borderWidth: 2,
+              },
             ]}
             onPress={() => setHorarioSeleccionado(h)}
           >
@@ -276,5 +289,3 @@ const styles = StyleSheet.create({
   },
   submitText: { color: "#fff", fontWeight: "700", fontSize: 18 },
 });
-
-

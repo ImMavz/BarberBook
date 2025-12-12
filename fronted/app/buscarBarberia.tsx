@@ -30,13 +30,13 @@ interface Barberia {
 }
 
 type RootStackParamList = {
-  agendarCita: { barberiaId: number };   // ← ESTE ES EL QUE FALTABA
+  agendarCita: { barberiaId: number };
 };
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 
 export default function BuscarBarberia() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<Nav>();
   const route = useRoute();
   const { colors } = useTheme();
 
@@ -532,5 +532,3 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
-
-

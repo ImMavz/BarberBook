@@ -16,6 +16,8 @@ import Button from "../components/ui/button";
 import { useAuthViewModel } from "../viewmodel/authViewModel";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { saveToken, saveUsuario } from "../utils/authStorage";
+
 
 export default function Login() {
   const router = useRouter();
@@ -24,35 +26,35 @@ export default function Login() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
 
+  
   const handleLogin = async () => {
-    if (!identifier || !password) {
-      Alert.alert("Error", "Todos los campos son obligatorios");
-      return;
-    }
+  if (!identifier || !password) {
+    Alert.alert("Error", "Todos los campos son obligatorios");
+    return;
+  }
 
-    const res = await login(identifier, password);
+  const res = await login(identifier, password);
 
-    if (!res.success) {
-      Alert.alert("Error", res.error?.message || "Credenciales incorrectas");
-      return;
-    }
+  if (!res.success) {
+    Alert.alert("Error", res.error?.message || "Credenciales incorrectas");
+    return;
+  }
 
-    console.log("Login correcto", res.data);
+  const data = res.data;
+  const usuario = data.usuario;
 
-    const data = res.data; // ✔️ ahora sí existe
-    const rol = data.usuario.rol;
+  // 💾 Guardar token y usuario
+  await saveToken(data.access_token);
+  await saveUsuario(usuario);
 
-    // ✔️ Guardar token correctamente
-    await AsyncStorage.setItem("token", data.access_token);
+  console.log("💾 Usuario guardado:", usuario);
 
-    // ✔️ Guardar usuario
-    await AsyncStorage.setItem("user", JSON.stringify(data.usuario));
+  // Redirección por rol
+  if (usuario.rol === "cliente") router.push("/homeCliente");
+  if (usuario.rol === "barbero") router.push("/homeBarbero");
+  if (usuario.rol === "dueño") router.push("/settingsBarberShop");
+};
 
-    // 🔥 Redirección dependiendo del rol
-    if (rol === "cliente") router.push("/homeCliente");
-    if (rol === "barbero") router.push("/homeBarbero");
-    if (rol === "dueño") router.push("/settingsBarberShop");
-  };
 
   return (
     <LinearGradient

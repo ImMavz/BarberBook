@@ -9,7 +9,7 @@ export class Appointment {
   id: number;
 
   @Column({ type: 'date' })
-  fecha: Date;
+  fecha: string;  // <-- 🔥 ANTES: Date | AHORA: string
 
   @Column({ name: 'hora_inicio', type: 'time' })
   horaInicio: string;
@@ -20,7 +20,11 @@ export class Appointment {
   @Column({ default: 'pendiente' })
   estado: string;
 
-  @Column({ name: 'fecha_creacion', type: 'timestamp', default: () => 'now()' })
+  @Column({
+    name: 'fecha_creacion',
+    type: 'timestamp',
+    default: () => 'now()',
+  })
   fechaCreacion: Date;
 
   // Cliente
@@ -38,3 +42,4 @@ export class Appointment {
   @JoinColumn({ name: 'id_servicio' })
   servicio: Service;
 }
+
