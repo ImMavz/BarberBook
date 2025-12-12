@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Appointment } from './appointment.entity';
 import { Repository } from 'typeorm';
 import { User } from 'src/users/user.entity';
 import { Barber } from 'src/barbers/barber.entity';
 import { Service } from 'src/services/service.entity';
+import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
 export class AppointmentsService {
@@ -20,7 +21,9 @@ export class AppointmentsService {
 
     @InjectRepository(Service)
     private readonly servicesRepo: Repository<Service>,
-  ) {}
+
+    private readonly mailService: MailService,
+  ) { }
 
   // ==========================================
   // 📌 CREAR CITA — con clienteId del JWT
@@ -33,6 +36,7 @@ export class AppointmentsService {
 
     const barbero = await this.barbersRepo.findOne({
       where: { id: data.id_barbero },
+      relations: ['usuario'],
     });
 
     const servicio = await this.servicesRepo.findOne({
@@ -42,6 +46,18 @@ export class AppointmentsService {
     if (!cliente) throw new NotFoundException('Cliente no encontrado');
     if (!barbero) throw new NotFoundException('Barbero no encontrado');
     if (!servicio) throw new NotFoundException('Servicio no encontrado');
+
+    const existe = await this.repo.findOne({
+      where: {
+        barbero: { id: data.id_barbero },
+        fecha: data.fecha,
+        horaInicio: data.horaInicio,
+      },
+    });
+
+    if (existe) {
+      throw new ConflictException('Ya existe una cita en este horario');
+    }
 
     const cita = this.repo.create({
       fecha: data.fecha,
@@ -53,7 +69,29 @@ export class AppointmentsService {
       servicio,
     });
 
-    return this.repo.save(cita);
+    const savedCita = await this.repo.save(cita);
+
+    // Enviar email de confirmación al CLIENTE
+    if (cliente.correo) {
+      await this.mailService.sendAppointmentConfirmation(cliente.correo, {
+        fecha: savedCita.fecha,
+        horaInicio: savedCita.horaInicio,
+        barbero: barbero.usuario.nombre,
+        servicio: servicio.nombre,
+      });
+    }
+
+    // Enviar notificación al BARBERO
+    if (barbero.usuario && barbero.usuario.correo) {
+      await this.mailService.sendNewAppointmentNotification(barbero.usuario.correo, {
+        fecha: savedCita.fecha,
+        horaInicio: savedCita.horaInicio,
+        cliente: cliente.nombre,
+        servicio: servicio.nombre,
+      });
+    }
+
+    return savedCita;
   }
 
   // ==========================================
@@ -108,10 +146,10 @@ export class AppointmentsService {
     return this.repo.remove(cita);
   }
   async findByBarbershop(barbershopId: number) {
-  return this.repo.find({
-    where: { barbero: { barberia: { id: barbershopId } } },
-    relations: ["barbero", "cliente", "servicio"],
-  });
-}
+    return this.repo.find({
+      where: { barbero: { barberia: { id: barbershopId } } },
+      relations: ["barbero", "cliente", "servicio"],
+    });
+  }
 
 }
