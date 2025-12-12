@@ -1,6 +1,4 @@
-import Constants from 'expo-constants';
-
-// Leer del archivo .env a través de la configuración de Expo
-const API_BASE_URL = Constants.expoConfig?.extra?.apiBaseUrl || 'http://localhost:3000';
+// Leer del archivo .env
+const API_BASE_URL = `http://${process.env.EXPO_PUBLIC_API_BASE_URL}` || 'http://localhost:3000';
 
 export { API_BASE_URL };

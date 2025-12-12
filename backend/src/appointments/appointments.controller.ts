@@ -15,12 +15,13 @@ import { CreateAppointmentDto } from './dto/create-appointment.dto';
 
 @Controller('appointments')
 export class AppointmentsController {
-  constructor(private readonly service: AppointmentsService) {}
+  constructor(private readonly service: AppointmentsService) { }
 
   // 👉 Crear una cita (solo clientes logueados)
   @UseGuards(JwtAuthGuard)
   @Post()
   create(@Request() req, @Body() dto: CreateAppointmentDto) {
+    console.log('📌 [DEBUG] User from JWT:', req.user);
     const clienteId = req.user.id; // viene del JWT
     return this.service.create({ ...dto, clienteId });
   }
@@ -61,7 +62,7 @@ export class AppointmentsController {
   }
   @Get("barbershop/:id")
   async getByBarbershop(@Param("id") id: string) {
-  return this.service.findByBarbershop(Number(id));
-}
+    return this.service.findByBarbershop(Number(id));
+  }
 
 }
