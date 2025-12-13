@@ -5,18 +5,30 @@ import { Payment } from "./payment.entity";
 import { CreatePaymentDto } from "./dto/create-payment.dto";
 import { UpdatePaymentDto } from "./dto/update-payment.dto";
 import { Barber } from "src/barbers/barber.entity";
+import { MercadoPagoConfig, Preference } from 'mercadopago';
 
 @Injectable()
 export class PaymentsService {
+  private client: MercadoPagoConfig;
+
   constructor(
     @InjectRepository(Payment)
     private readonly repo: Repository<Payment>,
 
     @InjectRepository(Barber)
     private readonly barbersRepo: Repository<Barber>,
-  ) {}
+  ) {
+    // Inicializar Mercado Pago
+    // Asegurarse de tener MERCADOPAGO_ACCESS_TOKEN en el .env
+    const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN || '';
+    if (accessToken) {
+      this.client = new MercadoPagoConfig({ accessToken });
+    } else {
+      console.warn('⚠️ MERCADOPAGO_ACCESS_TOKEN no está definido');
+    }
+  }
 
-  // ➤ Crear un pago
+  // ➤ Crear un pago (Registro manual o base)
   async create(dto: CreatePaymentDto) {
     const barber = await this.barbersRepo.findOne({
       where: { id: dto.barberoId },
@@ -27,11 +39,42 @@ export class PaymentsService {
     const payment = this.repo.create({
       monto: dto.monto,
       estado: dto.estado,
-      metodo: dto.metodo ?? "",   // evita error si viene null
+      metodo: dto.metodo ?? "",
       barbero: barber,
     });
 
     return this.repo.save(payment);
+  }
+
+  // ➤ Crear Preferencia de MercadoPago
+  async createPreference(title: string, quantity: number, price: number) {
+    if (!this.client) {
+      throw new Error("MercadoPago no está configurado correctamente");
+    }
+
+    const preference = new Preference(this.client);
+
+    const result = await preference.create({
+      body: {
+        items: [
+          {
+            id: "servicio-barberia",
+            title: title,
+            quantity: quantity,
+            unit_price: Number(price),
+            currency_id: "COP",
+          },
+        ],
+        back_urls: {
+          success: "https://www.google.com", // Redirigir a algo válido por ahora
+          failure: "https://www.google.com",
+          pending: "https://www.google.com",
+        },
+        auto_return: "approved",
+      },
+    });
+
+    return { id: result.id, init_point: result.init_point };
   }
 
   // ➤ Listar todos los pagos

@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import { getToken, getUsuario } from "../utils/authStorage";
 import { useRoute } from "@react-navigation/native";
+import { useRouter } from "expo-router"; // Import router
 import { useTheme } from "./context/ThemeContext";
 import { API_BASE_URL } from "../config/env";
 
@@ -20,6 +21,7 @@ const API_URL = API_BASE_URL;
 
 export default function AgendarCita() {
   const route = useRoute();
+  const router = useRouter(); // Initialize router
   const { barberiaId } = route.params as { barberiaId: number };
 
   const { colors } = useTheme();
@@ -117,11 +119,32 @@ export default function AgendarCita() {
 
       console.log("📤 Enviando cita:", body);
 
-      await axios.post(`${API_URL}/appointments`, body, {
+      const res = await axios.post(`${API_URL}/appointments`, body, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      Alert.alert("Cita creada", "Tu cita se agendó con éxito");
+      // ALERTA DE ÉXITO Y REDIRECCIÓN AL PAGO
+      Alert.alert(
+        "Cita Agendada",
+        "Tu cita se ha creado exitosamente. Ahora selecciona tu método de pago.",
+        [
+          {
+            text: "Ir a Pagar",
+            onPress: () => {
+              router.push({
+                pathname: "/metodoPago",
+                params: {
+                  appointmentId: res.data.id,
+                  total: servicio.precio, // Precio del servicio
+                  barberId: selectedBarbero,
+                  serviceName: servicio.nombre,
+                },
+              });
+            },
+          },
+        ]
+      );
+
     } catch (error: any) {
       console.log("❌ ERROR CREAR CITA:", error.response?.data);
       Alert.alert("Error", "No se pudo crear la cita");
