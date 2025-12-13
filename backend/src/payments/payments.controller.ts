@@ -13,7 +13,7 @@ import { UpdatePaymentDto } from "./dto/update-payment.dto";
 
 @Controller("payments")
 export class PaymentsController {
-  constructor(private service: PaymentsService) {}
+  constructor(private service: PaymentsService) { }
 
   @Get()
   findAll() {
@@ -28,6 +28,14 @@ export class PaymentsController {
   @Post()
   create(@Body() body: CreatePaymentDto) {
     return this.service.create(body);
+  }
+
+  // ➤ Endpoint para crear preferencia de MercadoPago
+  @Post("preference")
+  async createPreference(
+    @Body() body: { title: string; quantity: number; price: number }
+  ) {
+    return this.service.createPreference(body.title, body.quantity, body.price);
   }
 
   @Patch(":id")
