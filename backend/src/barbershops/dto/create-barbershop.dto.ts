@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsOptional, IsString, IsJSON } from "class-validator";
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsJSON,
+  IsObject,
+} from 'class-validator';
 
 export class CreateBarbershopDto {
   @IsString()
@@ -10,7 +16,8 @@ export class CreateBarbershopDto {
   direccion: string;
 
   @IsOptional()
-  horariosGlobales?: any;
+  @IsObject()
+  horariosGlobales?: Record<string, { abre: string; cierra: string } | null>;
 
   @IsNotEmpty()
   dueñoId: number; // ID del user dueño

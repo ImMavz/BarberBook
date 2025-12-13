@@ -37,16 +37,26 @@ export class BarbershopsService {
       where: { id: dto.dueñoId },
     });
 
-    if (!dueño) throw new NotFoundException("Dueño (usuario) no encontrado");
-
+    if (!dueño) {
+      throw new NotFoundException('Dueño (usuario) no encontrado');
+    }
+    
     const barberia = this.repo.create({
       nombre: dto.nombre,
       direccion: dto.direccion,
-      horariosGlobales: dto.horariosGlobales || null,
       dueño,
+      horariosGlobales: dto.horariosGlobales ?? null,
     });
 
     return this.repo.save(barberia);
+  }
+
+  async findByOwner(dueñoId: number) {
+    return this.repo.find({
+      where: {
+        dueño: { id: dueñoId },
+      },
+    });
   }
 
   async update(id: number, dto: UpdateBarbershopDto) {

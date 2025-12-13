@@ -28,4 +28,10 @@ export class UsersController {
     // req.user viene del payload del JWT (sub = id del usuario)
     return this.usersService.findOne(req.user.sub);
   }
+
+  @UseGuards(JwtAuthGuard)
+@Get('barberos-disponibles')
+async getBarberosDisponibles() {
+  return this.usersService.findBarberosDisponibles();
+  }
 }

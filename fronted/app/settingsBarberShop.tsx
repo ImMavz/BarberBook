@@ -74,7 +74,7 @@ export default function SettingsBarberShop() {
         {/* Barbería */}
         <TouchableOpacity
           style={styles.card}
-          onPress={() => router.push("manageBarbershops")}
+          onPress={() => router.push("crearBarberia")}
         >
           <View style={styles.iconCircle}>
             <Icon name="home-outline" size={40} color="#1E3A8A" />
@@ -85,7 +85,7 @@ export default function SettingsBarberShop() {
         {/* Servicios */}
         <TouchableOpacity
           style={styles.card}
-          onPress={() => router.push("manageServices")}
+          onPress={() => router.push("agregarServicio")}
         >
           <View style={styles.iconCircle}>
             <Icon name="cut-outline" size={40} color="#1E3A8A" />
@@ -96,7 +96,7 @@ export default function SettingsBarberShop() {
         {/* Barberos */}
         <TouchableOpacity
           style={styles.card}
-          onPress={() => router.push("manageBarbers")}
+          onPress={() => router.push("agregarBarbero")}
         >
           <View style={styles.iconCircle}>
             <Icon name="people-outline" size={40} color="#1E3A8A" />

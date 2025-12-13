@@ -5,6 +5,7 @@ import { User } from './user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import * as bcrypt from 'bcrypt';
 import { Barber } from 'src/barbers/barber.entity';
+import { In, Not } from 'typeorm';
 
 @Injectable()
 export class UsersService {
@@ -52,4 +53,30 @@ export class UsersService {
       relations: ['barberia'],
     });
   }
+
+  async findBarberosDisponibles() {
+    // 1️⃣ Obtener barberos con su usuario
+    const barberos = await this.barbersRepo.find({
+      relations: ['usuario'],
+    });
+
+    // 2️⃣ Filtrar SOLO los que sí tienen usuario
+    const usuariosOcupadosIds = barberos
+      .filter((b) => b.usuario !== null)
+      .map((b) => b.usuario.id);
+
+    // 3️⃣ Buscar usuarios con rol BARBERO que NO estén ocupados
+    const query: any = {
+      rol: 'barbero',
+    };
+
+    if (usuariosOcupadosIds.length > 0) {
+      query.id = Not(In(usuariosOcupadosIds));
+    }
+
+    return this.usersRepository.find({
+      where: query,
+    });
+  }
+
 }

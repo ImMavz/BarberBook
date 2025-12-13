@@ -1,7 +1,19 @@
-import { Controller, Get, Post, Body, Param, Patch, Delete, Query } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Patch,
+  Delete,
+  Query,
+  UseGuards,
+  Req,
+} from "@nestjs/common";
 import { BarbershopsService } from "./barbershops.service";
 import { CreateBarbershopDto } from "./dto/create-barbershop.dto";
 import { UpdateBarbershopDto } from "./dto/update-barbershop.dto";
+import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 
 @Controller("barbershops")
 export class BarbershopsController {
@@ -12,7 +24,15 @@ export class BarbershopsController {
     return this.service.findAll();
   }
 
-  // NUEVO: filtro de barberías
+  // 🔐 Barberías del dueño autenticado
+  @UseGuards(JwtAuthGuard)
+  @Get("mine")
+  findMine(@Req() req) {
+    const dueñoId = req.user.sub;
+    return this.service.findByOwner(dueñoId);
+  }
+
+  // Filtro
   @Get("filter")
   filter(@Query() query: any) {
     return this.service.filter(query);
