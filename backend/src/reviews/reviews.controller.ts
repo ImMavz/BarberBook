@@ -11,7 +11,7 @@ export class ReviewsController {
   @UseGuards(JwtAuthGuard)
   @Post()
   create(@Request() req, @Body() dto: CreateReviewDto) {
-    return this.service.create(dto, req.user.sub);
+    return this.service.create(dto, req.user.id);
   }
 
   // ⭐ Reseñas de barbería

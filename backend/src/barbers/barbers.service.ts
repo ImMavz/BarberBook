@@ -106,8 +106,12 @@ export class BarbersService {
   }
   
   //Barberos de la barberia
-  findByBarbershop(id: number) {
-  return this.repo.find({ where: { barberia: { id } } });
+  async findByBarbershop(barbershopId: number) {
+    return this.repo.find({
+      where: { barberia: { id: barbershopId } },
+      relations: ["usuario"], // 👈 ESTA ES LA CLAVE
+    });
   }
+
 
 }

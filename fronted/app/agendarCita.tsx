@@ -28,7 +28,7 @@ export default function AgendarCita() {
 
   const [barberos, setBarberos] = useState<any[]>([]);
   const [servicios, setServicios] = useState<any[]>([]);
-  const [selectedBarbero, setSelectedBarbero] = useState<number | null>(null);
+  const [selectedBarbero, setSelectedBarbero] = useState<any | null>(null);
   const [selectedServicio, setSelectedServicio] = useState<number | null>(null);
 
   const [selectedFecha, setSelectedFecha] = useState<string | null>(null);
@@ -135,7 +135,7 @@ export default function AgendarCita() {
       }
 
       const body = {
-        id_barbero: selectedBarbero,
+        id_barbero: selectedBarbero.id,
         id_servicio: selectedServicio,
         fecha: selectedFecha,                   // formato correcto
         horaInicio: horarioSeleccionado + ":00", // 🔥 ahora con segundos
@@ -178,13 +178,24 @@ export default function AgendarCita() {
   
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+    <ScrollView
+  style={{ backgroundColor: colors.background }} contentContainerStyle={{ padding: 20, paddingBottom: 120,}}>
+
       <Text style={[styles.title, { color: colors.text }]}>Agendar Cita</Text>
 
       {/* BARBEROS */}
       <Text style={[styles.sectionTitle, { color: colors.text }]}>
         Selecciona un barbero
       </Text>
+      {selectedBarbero && (
+      <Text style={{ color: colors.textSecondary, marginBottom: 10 }}>
+        Barbero seleccionado:{" "}
+        <Text style={{ color: colors.text, fontWeight: "700" }}>
+          {selectedBarbero.usuario?.nombre}
+        </Text>
+      </Text>
+    )}
+
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         {barberos.map((b) => (
@@ -193,14 +204,14 @@ export default function AgendarCita() {
             style={[
               styles.optionBox,
               { backgroundColor: colors.card },
-              selectedBarbero === b.id && {
+              selectedBarbero?.id === b.id && {
                 backgroundColor: colors.primary + "33",
                 borderColor: colors.primary,
                 borderWidth: 2,
               },
             ]}
             onPress={() => {
-            setSelectedBarbero(b.id);
+            setSelectedBarbero(b);
             cargarReseñasBarbero(b.id);
           }}
 
@@ -295,8 +306,6 @@ export default function AgendarCita() {
         <Text style={styles.submitText}>Agendar cita</Text>
       </TouchableOpacity>
 
-      <View style={{ height: 50 }} />
-
             {/* RESEÑAS BARBERÍA */}
       <Text style={[styles.sectionTitle, { color: colors.text }]}>
         Reseñas de la barbería
@@ -358,7 +367,7 @@ export default function AgendarCita() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20 },
+  container: { padding: 20, paddingBottom: 120 },
   title: { fontSize: 26, fontWeight: "700", marginBottom: 20 },
   sectionTitle: { fontSize: 18, fontWeight: "600", marginTop: 20, marginBottom: 10 },
 

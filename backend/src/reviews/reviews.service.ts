@@ -45,59 +45,52 @@ export class ReviewsService {
     return review;
   }
 
-  async create(dto: CreateReviewDto, clienteId: number) {
-    const cita = await this.appointmentsRepo.findOne({
-      where: { id: dto.citaId },
-      relations: ["cliente"],
-    });
+async create(dto: CreateReviewDto, clienteId: number) {
+  const cita = await this.appointmentsRepo.findOne({
+    where: { id: dto.citaId },
+    relations: ["cliente"],
+  });
 
-    if (!cita) {
-      throw new NotFoundException("Cita no encontrada");
-    }
-
-    if (cita.estado !== "completado") {
-      throw new ForbiddenException("La cita aún no ha finalizado");
-    }
-
-    // 🚫 Evitar doble reseña
-    const existe = await this.repo.findOne({
-      where: { cita: { id: dto.citaId } },
-    });
-
-    if (existe) {
-      throw new ForbiddenException("Esta cita ya fue reseñada");
-    }
-
-    // 🔐 Cliente desde JWT
-    const cliente = await this.usersRepo.findOneBy({
-      id: clienteId,
-    });
-
-    if (!cliente) {
-      throw new NotFoundException("Cliente no encontrado");
-    }
-
-    const barbero = await this.barbersRepo.findOneBy({
-      id: dto.barberoId,
-    });
-
-    const barberia = await this.barbershopsRepo.findOneBy({
-      id: dto.barberiaId,
-    });
-
-    const review = this.repo.create({
-      calificacionBarbero: dto.calificacionBarbero,
-      comentarioBarbero: dto.comentarioBarbero ?? null,
-      calificacionBarberia: dto.calificacionBarberia,
-      comentarioBarberia: dto.comentarioBarberia ?? null,
-      cliente,
-      barbero,
-      barberia,
-      cita,
-    } as DeepPartial<Review>);
-
-    return this.repo.save(review);
+  if (!cita) {
+    throw new NotFoundException("Cita no encontrada");
   }
+
+  if (cita.estado !== "completado") {
+    throw new ForbiddenException("La cita aún no ha finalizado");
+  }
+
+  if (cita.cliente.id !== clienteId) {
+    throw new ForbiddenException("Esta cita no pertenece al cliente");
+  }
+
+  const existe = await this.repo.findOne({
+    where: { cita: { id: dto.citaId } },
+  });
+
+  if (existe) {
+    throw new ForbiddenException("Esta cita ya fue reseñada");
+  }
+
+  const cliente = await this.usersRepo.findOneBy({ id: clienteId });
+  if (!cliente) throw new NotFoundException("Cliente no encontrado");
+
+  const barbero = await this.barbersRepo.findOneBy({ id: dto.barberoId });
+  const barberia = await this.barbershopsRepo.findOneBy({ id: dto.barberiaId });
+
+  const review = this.repo.create({
+    calificacionBarbero: dto.calificacionBarbero,
+    comentarioBarbero: dto.comentarioBarbero ?? null,
+    calificacionBarberia: dto.calificacionBarberia,
+    comentarioBarberia: dto.comentarioBarberia ?? null,
+    cliente,
+    barbero,
+    barberia,
+    cita,
+  } as DeepPartial<Review>);
+
+  return this.repo.save(review);
+}
+
 
 
 
