@@ -9,11 +9,12 @@ import {
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import * as WebBrowser from "expo-web-browser";
 import axios from "axios";
 import { API_BASE_URL } from "../config/env";
 import { getToken } from "../utils/authStorage";
+import { Colors } from "../constants/theme";
+import { useColorScheme } from "react-native";
 
 const API_URL = API_BASE_URL;
 
@@ -63,7 +64,7 @@ export default function MetodoPago() {
                 {
                     title: `Servicio: ${serviceName}`,
                     quantity: 1,
-                    price: Number(total) * 1000, // Asumiendo que 'total' está en miles (ej: 25 => 25000)
+                    price: Number(total), // El total ya viene completo desde la BD
                 },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -83,38 +84,45 @@ export default function MetodoPago() {
         }
     };
 
-    return (
-        <View style={styles.container}>
-            <LinearGradient
-                colors={["#0f0c29", "#302b63", "#24243e"]}
-                style={styles.background}
-            />
+    const colorScheme = useColorScheme() ?? 'light';
+    const themeColors = Colors[colorScheme];
+    const textColor = themeColors.text;
+    const backgroundColor = themeColors.background;
+    const iconColor = colorScheme === 'dark' ? '#fff' : '#000'; // Or use themeColors.icon
 
+    return (
+        <View style={[styles.container, { backgroundColor }]}>
             <View style={styles.content}>
-                <View style={styles.iconContainer}>
-                    <Ionicons name="card-outline" size={60} color="#fff" />
+                <View style={[styles.iconContainer, { backgroundColor: colorScheme === 'dark' ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}>
+                    <Ionicons name="card-outline" size={60} color={textColor} />
                 </View>
 
-                <Text style={styles.title}>Método de Pago</Text>
-                <Text style={styles.subtitle}>
+                <Text style={[styles.title, { color: textColor }]}>Método de Pago</Text>
+                <Text style={[styles.subtitle, { color: textColor }]}>
                     Selecciona cómo deseas pagar tu servicio de{"\n"}
                     <Text style={{ fontWeight: "700", color: "#4facfe" }}>{serviceName}</Text>
                 </Text>
-                <Text style={styles.price}>Total: ${total}k</Text>
+                <Text style={[styles.price, { color: "#00d2ff" }]}>Total: ${total}</Text>
 
                 <View style={styles.buttonsContainer}>
                     {/* BOTÓN CASH */}
                     <TouchableOpacity
-                        style={[styles.card, styles.cashCard]}
+                        style={[
+                            styles.card,
+                            {
+                                backgroundColor: colorScheme === 'dark' ? "rgba(255, 255, 255, 0.05)" : "#f0f0f0",
+                                borderColor: colorScheme === 'dark' ? "rgba(255,255,255,0.1)" : "#e0e0e0"
+                            }
+                        ]}
                         onPress={handleCashPayment}
                         disabled={loading}
                     >
-                        <Ionicons name="cash-outline" size={32} color="#fff" />
+                        <Ionicons name="cash-outline" size={32} color={textColor} />
                         <View style={styles.textWrapper}>
-                            <Text style={styles.cardTitle}>Efectivo / En Tienda</Text>
-                            <Text style={styles.cardDesc}>Paga al finalizar el servicio</Text>
+                            <Text style={[styles.cardTitle, { color: textColor }]}>Efectivo / En Tienda</Text>
+                            <Text style={[styles.cardDesc, { color: colorScheme === 'dark' ? "rgba(255,255,255,0.8)" : "#666" }]}>Paga al finalizar el servicio</Text>
                         </View>
-                        <Ionicons name="chevron-forward" size={24} color="#ccc" />
+                        <Ionicons name="chevron-forward" size={24} color={colorScheme === 'dark' ? "#ccc" : "#999"} />
                     </TouchableOpacity>
 
                     {/* BOTÓN MERCADOPAGO */}
@@ -125,10 +133,10 @@ export default function MetodoPago() {
                     >
                         <Ionicons name="wallet-outline" size={32} color="#fff" />
                         <View style={styles.textWrapper}>
-                            <Text style={styles.cardTitle}>Pago Anticipado</Text>
-                            <Text style={styles.cardDesc}>Mercado Pago (PSE, Tarjetas)</Text>
+                            <Text style={[styles.cardTitle, { color: '#fff' }]}>Pago Anticipado</Text>
+                            <Text style={[styles.cardDesc, { color: "rgba(255,255,255,0.9)" }]}>Mercado Pago (PSE, Tarjetas)</Text>
                         </View>
-                        <Ionicons name="chevron-forward" size={24} color="#ccc" />
+                        <Ionicons name="chevron-forward" size={24} color="#eee" />
                     </TouchableOpacity>
                 </View>
 
@@ -140,13 +148,7 @@ export default function MetodoPago() {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    background: {
-        position: "absolute",
-        left: 0,
-        right: 0,
-        top: 0,
-        height: "100%",
-    },
+    // background removed
     content: {
         flex: 1,
         padding: 24,
@@ -162,13 +164,11 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 28,
         fontWeight: "bold",
-        color: "#fff",
         marginBottom: 10,
         textAlign: "center",
     },
     subtitle: {
         fontSize: 16,
-        color: "#ccc",
         textAlign: "center",
         marginBottom: 30,
         lineHeight: 24,
@@ -191,9 +191,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: "rgba(255,255,255,0.1)",
     },
-    cashCard: {
-        backgroundColor: "rgba(255, 255, 255, 0.05)",
-    },
+    // cashCard removed
     mpCard: {
         backgroundColor: "#009ee3", // MercadoPago Blue
         borderColor: "#009ee3",
@@ -205,10 +203,8 @@ const styles = StyleSheet.create({
     cardTitle: {
         fontSize: 18,
         fontWeight: "bold",
-        color: "#fff",
     },
     cardDesc: {
         fontSize: 14,
-        color: "rgba(255,255,255,0.8)",
     },
 });
