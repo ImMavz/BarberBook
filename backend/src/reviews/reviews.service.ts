@@ -55,7 +55,7 @@ export class ReviewsService {
       throw new NotFoundException("Cita no encontrada");
     }
 
-    if (cita.estado !== "pendiente") {
+    if (cita.estado !== "completado") {
       throw new ForbiddenException("La cita aún no ha finalizado");
     }
 

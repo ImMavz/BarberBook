@@ -56,7 +56,7 @@ export default function HistorialCliente() {
 
       const pasadas = res.data.filter((c: any) => {
         const fechaHora = new Date(`${c.fecha}T${c.horaFin}`);
-        return fechaHora < ahora && c.estado === "pendiente";
+        return fechaHora < ahora && c.estado === "completado";
       });
 
       pasadas.sort((a: any, b: any) => {
