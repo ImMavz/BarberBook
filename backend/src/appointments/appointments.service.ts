@@ -1,11 +1,15 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Appointment } from './appointment.entity';
-import { Repository } from 'typeorm';
-import { User } from 'src/users/user.entity';
-import { Barber } from 'src/barbers/barber.entity';
-import { Service } from 'src/services/service.entity';
-import { MailService } from 'src/mail/mail.service';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { Appointment } from "./appointment.entity";
+import { User } from "src/users/user.entity";
+import { Barber } from "src/barbers/barber.entity";
+import { Service } from "src/services/service.entity";
+import { MailService } from "src/mail/mail.service";
 
 @Injectable()
 export class AppointmentsService {
@@ -22,30 +26,29 @@ export class AppointmentsService {
     @InjectRepository(Service)
     private readonly servicesRepo: Repository<Service>,
 
-    private readonly mailService: MailService,
-  ) { }
+    private readonly mailService: MailService
+  ) {}
 
   // ==========================================
-  // 📌 CREAR CITA — con clienteId del JWT
+  // 📌 CREAR CITA
   // ==========================================
   async create(data: any) {
-    // data.clienteId viene del JWT
     const cliente = await this.usersRepo.findOne({
       where: { id: data.clienteId },
     });
 
     const barbero = await this.barbersRepo.findOne({
       where: { id: data.id_barbero },
-      relations: ['usuario'],
+      relations: ["usuario"],
     });
 
     const servicio = await this.servicesRepo.findOne({
       where: { id: data.id_servicio },
     });
 
-    if (!cliente) throw new NotFoundException('Cliente no encontrado');
-    if (!barbero) throw new NotFoundException('Barbero no encontrado');
-    if (!servicio) throw new NotFoundException('Servicio no encontrado');
+    if (!cliente) throw new NotFoundException("Cliente no encontrado");
+    if (!barbero) throw new NotFoundException("Barbero no encontrado");
+    if (!servicio) throw new NotFoundException("Servicio no encontrado");
 
     const existe = await this.repo.findOne({
       where: {
@@ -56,42 +59,45 @@ export class AppointmentsService {
     });
 
     if (existe) {
-      throw new ConflictException('Ya existe una cita en este horario');
+      throw new ConflictException("Ya existe una cita en este horario");
     }
 
     const cita = this.repo.create({
       fecha: data.fecha,
       horaInicio: data.horaInicio,
       horaFin: data.horaFin,
-      estado: 'pendiente',
+      estado: "pendiente",
       cliente,
       barbero,
       servicio,
     });
 
-    const savedCita = await this.repo.save(cita);
+    const saved = await this.repo.save(cita);
 
-    // Enviar email de confirmación al CLIENTE
+    // 📧 Email cliente
     if (cliente.correo) {
       await this.mailService.sendAppointmentConfirmation(cliente.correo, {
-        fecha: savedCita.fecha,
-        horaInicio: savedCita.horaInicio,
+        fecha: saved.fecha,
+        horaInicio: saved.horaInicio,
         barbero: barbero.usuario.nombre,
         servicio: servicio.nombre,
       });
     }
 
-    // Enviar notificación al BARBERO
-    if (barbero.usuario && barbero.usuario.correo) {
-      await this.mailService.sendNewAppointmentNotification(barbero.usuario.correo, {
-        fecha: savedCita.fecha,
-        horaInicio: savedCita.horaInicio,
-        cliente: cliente.nombre,
-        servicio: servicio.nombre,
-      });
+    // 📧 Email barbero
+    if (barbero.usuario?.correo) {
+      await this.mailService.sendNewAppointmentNotification(
+        barbero.usuario.correo,
+        {
+          fecha: saved.fecha,
+          horaInicio: saved.horaInicio,
+          cliente: cliente.nombre,
+          servicio: servicio.nombre,
+        }
+      );
     }
 
-    return savedCita;
+    return saved;
   }
 
   // ==========================================
@@ -104,32 +110,13 @@ export class AppointmentsService {
         "barbero",
         "barbero.usuario",
         "barbero.barberia",
-        "servicio"
+        "servicio",
       ],
       order: { fecha: "ASC" },
     });
 
-    return citas.map(c => this.cleanAppointmentDates(c));
+    return citas.map((c) => this.cleanDates(c));
   }
-
-
-
-
-  cleanAppointmentDates(cita: Appointment) {
-    const fecha = String(cita.fecha); // 🔥 siempre string
-    const horaInicio = (cita.horaInicio ?? "00:00:00").slice(0, 8);
-    const horaFin = (cita.horaFin ?? "00:00:00").slice(0, 8);
-
-    return {
-      ...cita,
-      fecha,
-      horaInicio,
-      horaFin,
-    };
-  }
-
-
-
 
   // ==========================================
   // 📌 CITAS DE UN BARBERO
@@ -137,24 +124,33 @@ export class AppointmentsService {
   async findByBarbero(barberoId: number) {
     const citas = await this.repo.find({
       where: { barbero: { id: barberoId } },
-      relations: ['cliente', 'servicio'],
-      order: { fecha: 'ASC' },
+      relations: ["cliente", "servicio"],
+      order: { fecha: "ASC" },
     });
 
-    return citas.map(c => this.cleanAppointmentDates(c));
+    return citas.map((c) => this.cleanDates(c));
   }
 
+  // ==========================================
+  // 📌 CITAS POR BARBERÍA
+  // ==========================================
+  async findByBarbershop(barbershopId: number) {
+    return this.repo.find({
+      where: { barbero: { barberia: { id: barbershopId } } },
+      relations: ["barbero", "cliente", "servicio"],
+    });
+  }
 
   // ==========================================
-  // 📌 OBTENER UNA CITA POR ID
+  // 📌 OBTENER UNA CITA
   // ==========================================
   async findOne(id: number) {
     const cita = await this.repo.findOne({
       where: { id },
-      relations: ['cliente', 'barbero', 'servicio'],
+      relations: ["cliente", "barbero", "servicio"],
     });
 
-    if (!cita) throw new NotFoundException('Cita no encontrada');
+    if (!cita) throw new NotFoundException("Cita no encontrada");
     return cita;
   }
 
@@ -174,11 +170,16 @@ export class AppointmentsService {
     const cita = await this.findOne(id);
     return this.repo.remove(cita);
   }
-  async findByBarbershop(barbershopId: number) {
-    return this.repo.find({
-      where: { barbero: { barberia: { id: barbershopId } } },
-      relations: ["barbero", "cliente", "servicio"],
-    });
-  }
 
+  // ==========================================
+  // 🧼 LIMPIAR FECHAS
+  // ==========================================
+  cleanDates(cita: Appointment) {
+    return {
+      ...cita,
+      fecha: String(cita.fecha),
+      horaInicio: (cita.horaInicio ?? "00:00:00").slice(0, 8),
+      horaFin: (cita.horaFin ?? "00:00:00").slice(0, 8),
+    };
+  }
 }

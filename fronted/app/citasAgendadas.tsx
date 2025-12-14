@@ -133,6 +133,36 @@ const CitasAgendadas = () => {
       }
     });
   };
+  
+  const cambiarEstadoCita = async (nuevoEstado: EstadoCita) => {
+  if (!citaSeleccionada) return;
+
+  try {
+    const token = await getToken();
+
+    await axios.patch(
+      `${API_URL}/appointments/${citaSeleccionada.id}`,
+      { estado: nuevoEstado },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    // Cerrar modal
+    setModalVisible(false);
+    setCitaSeleccionada(null);
+
+    // Recargar citas con el filtro actual
+    cargarCitas(barbero.barberoId, filtro);
+
+  } catch (error: any) {
+    console.log("❌ Error cambiando estado:", error.response?.data || error.message);
+    Alert.alert("Error", "No se pudo cambiar el estado de la cita");
+  }
+};
+
 
   const ordenarPorHora = (citas: Cita[]) => {
     return citas.sort((a, b) => {

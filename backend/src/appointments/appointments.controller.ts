@@ -8,63 +8,85 @@ import {
   Param,
   Patch,
   Delete,
-} from '@nestjs/common';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { AppointmentsService } from './appointments.service';
-import { CreateAppointmentDto } from './dto/create-appointment.dto';
+  BadRequestException,
+} from "@nestjs/common";
+import { JwtAuthGuard } from "src/auth/jwt-auth.guard";
+import { AppointmentsService } from "./appointments.service";
+import { CreateAppointmentDto } from "./dto/create-appointment.dto";
 
-@Controller('appointments')
+@Controller("appointments")
 export class AppointmentsController {
-  constructor(private readonly service: AppointmentsService) { }
+  constructor(private readonly service: AppointmentsService) {}
 
-  // 👉 Crear una cita (solo clientes logueados)
+  // ==========================================
+  // 📌 CREAR CITA (CLIENTE LOGUEADO)
+  // ==========================================
   @UseGuards(JwtAuthGuard)
   @Post()
   create(@Request() req, @Body() dto: CreateAppointmentDto) {
-    console.log('📌 [DEBUG] User from JWT:', req.user);
-    const clienteId = req.user.id; // viene del JWT
+    const clienteId = req.user.id;
     return this.service.create({ ...dto, clienteId });
   }
 
-  // 👉 Obtener citas de un cliente
+  // ==========================================
+  // 📌 CITAS DE UN CLIENTE
+  // ==========================================
   @UseGuards(JwtAuthGuard)
-  @Get('cliente')
+  @Get("cliente")
   getByCliente(@Request() req) {
-    console.log("👉 Token usuario:", req.user);
-    const clienteId = req.user.id; // Extraído del token
+    const clienteId = req.user.id;
     return this.service.findByCliente(clienteId);
   }
 
-  // 👉 Obtener citas de un barbero
+  // ==========================================
+  // 📌 CITAS DE UN BARBERO
+  // ==========================================
   @UseGuards(JwtAuthGuard)
-  @Get('barbero/:id')
-  getByBarbero(@Param('id') id: number) {
+  @Get("barbero/:id")
+  getByBarbero(@Param("id") id: string) {
     return this.service.findByBarbero(Number(id));
   }
 
-  // 👉 Obtener una cita por ID
+  // ==========================================
+  // 📌 CITAS POR BARBERÍA
+  // ==========================================
   @UseGuards(JwtAuthGuard)
-  @Get(':id')
-  getOne(@Param('id') id: number) {
-    return this.service.findOne(Number(id));
-  }
-
-  // 👉 Cambiar estado de cita (confirmar, cancelar, etc.)
-  @UseGuards(JwtAuthGuard)
-  @Patch(':id/estado')
-  updateEstado(@Param('id') id: number, @Body('estado') estado: string) {
-    return this.service.updateEstado(Number(id), estado);
-  }
-
-  // 👉 Eliminar cita
-  @UseGuards(JwtAuthGuard)
-  @Delete(':id')
-  delete(@Param('id') id: number) {
-    return this.service.remove(Number(id));
-  }
   @Get("barbershop/:id")
-  async getByBarbershop(@Param("id") id: string) {
+  getByBarbershop(@Param("id") id: string) {
     return this.service.findByBarbershop(Number(id));
   }
 
+  // ==========================================
+  // 📌 OBTENER CITA POR ID
+  // ==========================================
+  @UseGuards(JwtAuthGuard)
+  @Get(":id")
+  getOne(@Param("id") id: string) {
+    return this.service.findOne(Number(id));
+  }
+
+  // ==========================================
+  // 📌 CAMBIAR ESTADO DE LA CITA
+  // ==========================================
+  @UseGuards(JwtAuthGuard)
+  @Patch(":id")
+  updateEstado(
+    @Param("id") id: string,
+    @Body("estado") estado: string
+  ) {
+    if (!["pendiente", "en progreso", "completado"].includes(estado)) {
+      throw new BadRequestException("Estado inválido");
+    }
+
+    return this.service.updateEstado(Number(id), estado);
+  }
+
+  // ==========================================
+  // 📌 ELIMINAR CITA
+  // ==========================================
+  @UseGuards(JwtAuthGuard)
+  @Delete(":id")
+  remove(@Param("id") id: string) {
+    return this.service.remove(Number(id));
+  }
 }
