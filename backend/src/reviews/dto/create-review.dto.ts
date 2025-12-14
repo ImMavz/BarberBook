@@ -1,23 +1,33 @@
 import { IsInt, IsOptional, IsString, Min, Max } from "class-validator";
 
 export class CreateReviewDto {
+  // ⭐ BARBERO
   @IsInt()
   @Min(1)
   @Max(5)
-  calificacion: number;
+  calificacionBarbero: number;
 
   @IsOptional()
   @IsString()
-  comentario?: string | null;
+  comentarioBarbero?: string | null;
 
+  // ⭐ BARBERÍA
   @IsInt()
-  clienteId: number;
+  @Min(1)
+  @Max(5)
+  calificacionBarberia: number;
 
   @IsOptional()
-  @IsInt()
-  barberoId?: number;
+  @IsString()
+  comentarioBarberia?: string | null;
 
-  @IsOptional()
+  // 🔗 IDs
   @IsInt()
-  barberiaId?: number;
+  barberoId: number;
+
+  @IsInt()
+  barberiaId: number;
+
+  @IsInt()
+  citaId: number;
 }

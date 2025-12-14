@@ -6,9 +6,18 @@ import { ReviewsService } from "./reviews.service";
 import { User } from "src/users/user.entity";
 import { Barber } from "src/barbers/barber.entity";
 import { Barbershop } from "src/barbershops/barbershop.entity";
+import { Appointment } from "src/appointments/appointment.entity";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Review, User, Barber, Barbershop])],
+  imports: [
+    TypeOrmModule.forFeature([
+      Review,
+      User,
+      Barber,
+      Barbershop,
+      Appointment, // 👈 ESTA LÍNEA ES LA CLAVE
+    ]),
+  ],
   controllers: [ReviewsController],
   providers: [ReviewsService],
   exports: [ReviewsService],

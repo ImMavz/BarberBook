@@ -124,13 +124,8 @@ export default function BuscarBarberia() {
           servicios: b.servicios || [],
           horarios_globales: b.horariosGlobales || {},
 
-
-          rating:
-            b.reseñas?.length > 0
-              ? b.reseñas.reduce((acc: number, r: any) => acc + r.rating, 0) /
-                b.reseñas.length
-              : 4.5,
-          reviews: b.reseñas?.length || 0,
+          rating: b.rating ?? 0,
+          reviews: b.reviews ?? 0,
           distancia: "1 km",
           estado: "Abierto",
 

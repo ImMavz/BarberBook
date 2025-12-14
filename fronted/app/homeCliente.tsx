@@ -153,6 +153,14 @@ export default function HomeCliente() {
         <TouchableOpacity onPress={toggleTheme} style={{ marginLeft: "auto" }}>
           <Ionicons name={themeIcon} size={28} color={colors.text} />
         </TouchableOpacity>
+
+      <TouchableOpacity
+        onPress={() => navigation.navigate("historialCliente")}
+      >
+        <Text style={{ marginLeft: 6, color: colors.textSecondary }}>
+          Historial
+        </Text>
+      </TouchableOpacity>
       </View>
 
       {/* BUSCADOR */}

@@ -17,8 +17,28 @@ export class BarbershopsService {
   ) {}
 
   async findAll() {
-    return this.repo.find({
+    const barberias = await this.repo.find({
       relations: ["dueño", "barberos", "servicios", "reseñas"],
+    });
+
+    return barberias.map((b) => {
+      const reseñasBarberia = (b.reseñas || []).filter(
+        (r: any) => r.calificacionBarberia !== null
+      );
+
+      const rating =
+        reseñasBarberia.length > 0
+          ? reseñasBarberia.reduce(
+              (acc: number, r: any) => acc + r.calificacionBarberia,
+              0
+            ) / reseñasBarberia.length
+          : 0;
+
+      return {
+        ...b,
+        rating: Number(rating.toFixed(1)),
+        reviews: reseñasBarberia.length,
+      };
     });
   }
 
@@ -29,7 +49,24 @@ export class BarbershopsService {
     });
 
     if (!barberia) throw new NotFoundException("Barbería no encontrada");
-    return barberia;
+
+    const reseñasBarberia = (barberia.reseñas || []).filter(
+      (r: any) => r.calificacionBarberia !== null
+    );
+
+    const rating =
+      reseñasBarberia.length > 0
+        ? reseñasBarberia.reduce(
+            (acc: number, r: any) => acc + r.calificacionBarberia,
+            0
+          ) / reseñasBarberia.length
+        : 0;
+
+    return {
+      ...barberia,
+      rating: Number(rating.toFixed(1)),
+      reviews: reseñasBarberia.length,
+    };
   }
 
   async create(dto: CreateBarbershopDto) {

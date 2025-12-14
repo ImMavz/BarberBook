@@ -78,9 +78,7 @@ export default function HomeBarbero() {
           (a: any, b: any) =>
             new Date(`${b.fecha}T${b.horaInicio}`).getTime() -
             new Date(`${a.fecha}T${a.horaInicio}`).getTime()
-        )
-        
-        .filter((c: any) => c.estado === "completada" || c.estado === "cancelada")
+        )        
         .slice(0, 5)
         .map((c: any) => ({
           id: c.id,

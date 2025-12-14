@@ -3,7 +3,7 @@ import { User } from 'src/users/user.entity';
 import { Barber } from 'src/barbers/barber.entity';
 import { Service } from 'src/services/service.entity';
 import { Review } from 'src/reviews/review.entity';
-
+//Comentario
 @Entity('barberias')
 export class Barbershop {
   @PrimaryGeneratedColumn({ name: 'id_barberia' })

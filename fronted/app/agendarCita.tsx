@@ -33,6 +33,8 @@ export default function AgendarCita() {
 
   const [selectedFecha, setSelectedFecha] = useState<string | null>(null);
   const [showPicker, setShowPicker] = useState(false);
+  const [reseñasBarberia, setReseñasBarberia] = useState<any[]>([]);
+  const [reseñasBarbero, setReseñasBarbero] = useState<any[]>([]);
 
   const [horarioSeleccionado, setHorarioSeleccionado] = useState<string | null>(
     null
@@ -44,7 +46,29 @@ export default function AgendarCita() {
   useEffect(() => {
     cargarBarberos();
     cargarServicios();
+    cargarReseñasBarberia();
+
   }, []);
+
+    const cargarReseñasBarberia = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/reviews/barberia/${barberiaId}`);
+      setReseñasBarberia(res.data);
+    } catch (err) {
+      console.log("❌ ERROR reseñas barbería", err);
+    }
+  };
+
+  const cargarReseñasBarbero = async (barberoId: number) => {
+    try {
+      const res = await axios.get(`${API_URL}/reviews/barbero/${barberoId}`);
+      setReseñasBarbero(res.data);
+    } catch (err) {
+      console.log("❌ ERROR reseñas barbero", err);
+    }
+  };
+
+
 
   const cargarBarberos = async () => {
     try {
@@ -100,6 +124,7 @@ export default function AgendarCita() {
     const servicio = servicios.find((s) => s.id === selectedServicio);
     const horaFinCalculada = sumarMinutos(horarioSeleccionado, servicio.duracion);
 
+
     try {
       const token = await getToken();
       const usuario = await getUsuario();
@@ -150,6 +175,7 @@ export default function AgendarCita() {
       Alert.alert("Error", "No se pudo crear la cita");
     }
   };
+  
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -173,7 +199,11 @@ export default function AgendarCita() {
                 borderWidth: 2,
               },
             ]}
-            onPress={() => setSelectedBarbero(b.id)}
+            onPress={() => {
+            setSelectedBarbero(b.id);
+            cargarReseñasBarbero(b.id);
+          }}
+
           >
             <Ionicons name="person-outline" size={28} color={colors.text} />
             <Text style={[styles.optionText, { color: colors.text }]}>
@@ -266,6 +296,63 @@ export default function AgendarCita() {
       </TouchableOpacity>
 
       <View style={{ height: 50 }} />
+
+            {/* RESEÑAS BARBERÍA */}
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>
+        Reseñas de la barbería
+      </Text>
+
+      {reseñasBarberia.length === 0 ? (
+        <Text style={{ color: colors.textSecondary }}>
+          Aún no hay reseñas
+        </Text>
+      ) : (
+        reseñasBarberia.map((r) => (
+          <View key={r.id} style={[styles.reviewCard, { backgroundColor: colors.card }]}>
+            <Text style={{ fontWeight: "700", color: colors.text }}>
+              ⭐ {r.calificacionBarberia}/5
+            </Text>
+            <Text style={{ color: colors.text }}>
+              {r.comentarioBarberia || "Sin comentario"}
+            </Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
+              — {r.cliente?.nombre ?? "Cliente"}
+            </Text>
+          </View>
+        ))
+      )}
+      {selectedBarbero && (
+      <>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          Reseñas del barbero
+        </Text>
+
+        {reseñasBarbero.length === 0 ? (
+          <Text style={{ color: colors.textSecondary }}>
+            Este barbero aún no tiene reseñas
+          </Text>
+        ) : (
+          reseñasBarbero.map((r) => (
+            <View
+              key={r.id}
+              style={[styles.reviewCard, { backgroundColor: colors.card }]}
+            >
+              <Text style={{ fontWeight: "700", color: colors.text }}>
+                ⭐ {r.calificacionBarbero}/5
+              </Text>
+              <Text style={{ color: colors.text }}>
+                {r.comentarioBarbero || "Sin comentario"}
+              </Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
+                — {r.cliente?.nombre ?? "Cliente"}
+              </Text>
+            </View>
+          ))
+        )}
+      </>
+    )}
+
+
     </ScrollView>
   );
 }
@@ -311,4 +398,11 @@ const styles = StyleSheet.create({
     marginTop: 30,
   },
   submitText: { color: "#fff", fontWeight: "700", fontSize: 18 },
+  reviewCard: {
+  padding: 12,
+  borderRadius: 12,
+  marginTop: 10,
+  paddingBottom: 16,
+},
+
 });

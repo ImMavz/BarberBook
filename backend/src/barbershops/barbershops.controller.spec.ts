@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BarbershopsController } from './barbershops.controller';
-
+//Comentario
 describe('BarbershopsController', () => {
   let controller: BarbershopsController;
 

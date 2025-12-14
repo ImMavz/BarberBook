@@ -1,42 +1,39 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Delete,
-  Patch,
-} from "@nestjs/common";
+import { Controller, Get, Post, Body, Param, UseGuards, Request } from "@nestjs/common";
 import { ReviewsService } from "./reviews.service";
 import { CreateReviewDto } from "./dto/create-review.dto";
-import { UpdateReviewDto } from "./dto/update-review.dto";
+import { JwtAuthGuard } from "src/auth/jwt-auth.guard";
 
 @Controller("reviews")
 export class ReviewsController {
   constructor(private service: ReviewsService) {}
 
-  @Get()
-  findAll() {
-    return this.service.findAll();
-  }
-
-  @Get(":id")
-  findOne(@Param("id") id: string) {
-    return this.service.findOne(Number(id));
-  }
-
+  // ⭐ Crear reseña (cliente logueado)
+  @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Body() body: CreateReviewDto) {
-    return this.service.create(body);
+  create(@Request() req, @Body() dto: CreateReviewDto) {
+    return this.service.create(dto, req.user.sub);
   }
 
-  @Patch(":id")
-  update(@Param("id") id: string, @Body() body: UpdateReviewDto) {
-    return this.service.update(Number(id), body);
+  // ⭐ Reseñas de barbería
+  @Get("barberia/:id")
+  findByBarberia(@Param("id") id: number) {
+    return this.service.findByBarberia(Number(id));
   }
 
-  @Delete(":id")
-  delete(@Param("id") id: string) {
-    return this.service.remove(Number(id));
+  // ⭐ Reseñas de barbero
+  @Get("barbero/:id")
+  findByBarbero(@Param("id") id: number) {
+    return this.service.findByBarbero(Number(id));
+  }
+
+  // ⭐ Promedios
+  @Get("barbero/:id/promedio")
+  promedioBarbero(@Param("id") id: number) {
+    return this.service.promedioBarbero(Number(id));
+  }
+
+  @Get("barberia/:id/promedio")
+  promedioBarberia(@Param("id") id: number) {
+    return this.service.promedioBarberia(Number(id));
   }
 }

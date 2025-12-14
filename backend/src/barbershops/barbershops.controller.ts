@@ -14,7 +14,7 @@ import { BarbershopsService } from "./barbershops.service";
 import { CreateBarbershopDto } from "./dto/create-barbershop.dto";
 import { UpdateBarbershopDto } from "./dto/update-barbershop.dto";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
-
+//Comentario
 @Controller("barbershops")
 export class BarbershopsController {
   constructor(private service: BarbershopsService) {}

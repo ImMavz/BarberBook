@@ -1,31 +1,45 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { User } from 'src/users/user.entity';
-import { Barber } from 'src/barbers/barber.entity';
-import { Barbershop } from 'src/barbershops/barbershop.entity';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToOne } from "typeorm";
+import { User } from "src/users/user.entity";
+import { Barber } from "src/barbers/barber.entity";
+import { Barbershop } from "src/barbershops/barbershop.entity";
+import { Appointment } from "src/appointments/appointment.entity";
 
-@Entity('reseñas')
+@Entity("reseñas")
 export class Review {
-  @PrimaryGeneratedColumn({ name: 'id_resena' })
+  @PrimaryGeneratedColumn({ name: "id_resena" })
   id: number;
 
-  @Column()
-  calificacion: number;
+  // ⭐ BARBERO
+  @Column({ name: "calificacion_barbero", type: "int" })
+  calificacionBarbero: number;
 
-  @Column({ type: 'text', nullable: true })   // <<< CAMBIO CLAVE
-  comentario: string | null;
+  @Column({ name: "comentario_barbero", type: "text", nullable: true })
+  comentarioBarbero: string | null;
 
-  @Column({ type: 'timestamp', default: () => 'now()' })
+  // ⭐ BARBERÍA
+  @Column({ name: "calificacion_barberia", type: "int" })
+  calificacionBarberia: number;
+
+  @Column({ name: "comentario_barberia", type: "text", nullable: true })
+  comentarioBarberia: string | null;
+
+  @Column({ type: "timestamp", default: () => "now()" })
   fecha: Date;
 
-  @ManyToOne(() => User, (user) => user.reseñas)
-  @JoinColumn({ name: 'id_cliente' })
+  @ManyToOne(() => User)
+  @JoinColumn({ name: "id_cliente" })
   cliente: User;
 
-  @ManyToOne(() => Barber, (barber) => barber.citas, { nullable: true })
-  @JoinColumn({ name: 'id_barbero' })
-  barbero: Barber | null;
+  @ManyToOne(() => Barber)
+  @JoinColumn({ name: "id_barbero" })
+  barbero: Barber;
 
-  @ManyToOne(() => Barbershop, (barbershop) => barbershop.reseñas, { nullable: true })
-  @JoinColumn({ name: 'id_barberia' })
-  barberia: Barbershop | null;
+  @ManyToOne(() => Barbershop)
+  @JoinColumn({ name: "id_barberia" })
+  barberia: Barbershop;
+
+  @OneToOne(() => Appointment)
+  @JoinColumn({ name: "id_cita" })
+  cita: Appointment;
 }
+

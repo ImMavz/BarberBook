@@ -5,7 +5,7 @@ import {
   IsJSON,
   IsObject,
 } from 'class-validator';
-
+//Comentario
 export class CreateBarbershopDto {
   @IsString()
   @IsNotEmpty()
