@@ -4,6 +4,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   SafeAreaView,
+  FlatList,
+  Alert,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -13,43 +15,69 @@ import { API_BASE_URL } from "../config/env";
 
 export default function SettingsBarberShop() {
   const router = useRouter();
-  const [owner, setOwner] = useState<any>(null);
-  const API_URL = API_BASE_URL;
 
-  // Obtener datos del dueño desde el backend con el token
-  const fetchOwner = async () => {
+  const [owner, setOwner] = useState<any>(null);
+  const [barberias, setBarberias] = useState<any[]>([]);
+  const [servicios, setServicios] = useState<any[]>([]);
+  const [barberos, setBarberos] = useState<any[]>([]);
+
+  useEffect(() => {
+    cargarTodo();
+  }, []);
+
+  const cargarTodo = async () => {
     try {
       const token = await AsyncStorage.getItem("token");
 
-      if (!token) {
-        console.log("No hay token guardado");
-        return;
-      }
-
-      const response = await fetch(`${API_URL}/users/me`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const resOwner = await fetch(`${API_BASE_URL}/users/me`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
+      const ownerData = await resOwner.json();
+      setOwner(ownerData);
 
-      const data = await response.json();
-      console.log("Dueño cargado:", data);
+      const resBarberias = await fetch(`${API_BASE_URL}/barbershops/mine`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const barberiasData = await resBarberias.json();
+      setBarberias(barberiasData);
 
-      setOwner(data);
+      if (barberiasData.length > 0) {
+        const barberiaId = barberiasData[0].id;
+
+        const [resServicios, resBarberos] = await Promise.all([
+          fetch(`${API_BASE_URL}/services/barbershop/${barberiaId}`),
+          fetch(`${API_BASE_URL}/barbers/barbershop/${barberiaId}`),
+        ]);
+
+        setServicios(await resServicios.json());
+        setBarberos(await resBarberos.json());
+      }
     } catch (error) {
-      console.log("Error cargando dueño:", error);
+      console.log(error);
+      Alert.alert("Error", "No se pudieron cargar los datos");
     }
   };
 
-  useEffect(() => {
-    fetchOwner();
-  }, []);
-
-  // Generar inicial del avatar
-  const getInitial = (name: string) => {
-    if (!name) return "";
-    return name.trim().charAt(0).toUpperCase();
+  const eliminarItem = async (url: string, mensaje: string) => {
+    Alert.alert("Confirmar", mensaje, [
+      { text: "Cancelar" },
+      {
+        text: "Eliminar",
+        style: "destructive",
+        onPress: async () => {
+          const token = await AsyncStorage.getItem("token");
+          await fetch(url, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          cargarTodo();
+        },
+      },
+    ]);
   };
+
+  const getInitial = (name: string) =>
+    name ? name.trim().charAt(0).toUpperCase() : "";
 
   return (
     <SafeAreaView style={styles.container}>
@@ -58,142 +86,163 @@ export default function SettingsBarberShop() {
         <Text style={styles.navbarText}>Configuración</Text>
       </View>
 
-      {/* PERFIL DEL DUEÑO */}
+      {/* PERFIL */}
       <View style={styles.profileContainer}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{getInitial(owner?.nombre)}</Text>
         </View>
-
-        <Text style={styles.ownerName}>{owner?.nombre || "Cargando..."}</Text>
-        <Text style={styles.ownerEmail}>{owner?.correo || ""}</Text>
+        <Text style={styles.ownerName}>{owner?.nombre}</Text>
+        <Text style={styles.ownerEmail}>{owner?.correo}</Text>
       </View>
 
-      {/* OPCIONES DE CONFIGURACIÓN */}
-      <View style={styles.menuContainer}>
+      {/* SECCIONES */}
+      <FlatList
+        data={[]}
+        ListHeaderComponent={
+          <>
+            {/* BARBERÍAS */}
+            <Section
+              title="Barberías"
+              data={barberias}
+              renderItem={(item) => (
+                <ItemRow
+                  label={item.nombre}
+                  onDelete={() =>
+                    eliminarItem(
+                      `${API_BASE_URL}/barbershops/${item.id}`,
+                      "¿Eliminar barbería?"
+                    )
+                  }
+                />
+              )}
+              onAdd={() => router.push("crearBarberia")}
+            />
 
-        {/* Barbería */}
-        <TouchableOpacity
-          style={styles.card}
-          onPress={() => router.push("crearBarberia")}
-        >
-          <View style={styles.iconCircle}>
-            <Icon name="home-outline" size={40} color="#1E3A8A" />
-          </View>
-          <Text style={styles.cardText}>Barbería</Text>
-        </TouchableOpacity>
+            {/* SERVICIOS */}
+            <Section
+              title="Servicios"
+              data={servicios}
+              renderItem={(item) => (
+                <ItemRow
+                  label={`${item.nombre} ($${item.precio})`}
+                  onDelete={() =>
+                    eliminarItem(
+                      `${API_BASE_URL}/services/${item.id}`,
+                      "¿Eliminar servicio?"
+                    )
+                  }
+                />
+              )}
+              onAdd={() => router.push("agregarServicio")}
+            />
 
-        {/* Servicios */}
-        <TouchableOpacity
-          style={styles.card}
-          onPress={() => router.push("agregarServicio")}
-        >
-          <View style={styles.iconCircle}>
-            <Icon name="cut-outline" size={40} color="#1E3A8A" />
-          </View>
-          <Text style={styles.cardText}>Servicios</Text>
-        </TouchableOpacity>
-
-        {/* Barberos */}
-        <TouchableOpacity
-          style={styles.card}
-          onPress={() => router.push("agregarBarbero")}
-        >
-          <View style={styles.iconCircle}>
-            <Icon name="people-outline" size={40} color="#1E3A8A" />
-          </View>
-          <Text style={styles.cardText}>Barberos</Text>
-        </TouchableOpacity>
-
-      </View>
+            {/* BARBEROS */}
+            <Section
+              title="Barberos"
+              data={barberos}
+              renderItem={(item) => (
+                <ItemRow
+                  label={item.usuario?.nombre}
+                  onDelete={() =>
+                    eliminarItem(
+                      `${API_BASE_URL}/barbers/${item.id}`,
+                      "¿Eliminar barbero?"
+                    )
+                  }
+                />
+              )}
+              onAdd={() => router.push("agregarBarbero")}
+            />
+          </>
+        }
+      />
     </SafeAreaView>
   );
 }
 
-// ======== ESTILOS ========
+/* ================= COMPONENTES ================= */
+
+const Section = ({ title, data, renderItem, onAdd }: any) => (
+  <View style={styles.section}>
+    <Text style={styles.sectionTitle}>{title}</Text>
+
+    {data.length === 0 ? (
+      <Text style={styles.empty}>No hay registros</Text>
+    ) : (
+      data.map((item: any) => (
+        <View key={item.id}>{renderItem(item)}</View>
+      ))
+    )}
+
+    <TouchableOpacity style={styles.addButton} onPress={onAdd}>
+      <Icon name="add-circle-outline" size={22} color="#1E3A8A" />
+      <Text style={styles.addText}>Agregar {title}</Text>
+    </TouchableOpacity>
+  </View>
+);
+
+const ItemRow = ({ label, onDelete }: any) => (
+  <View style={styles.row}>
+    <Text style={styles.rowText}>{label}</Text>
+    <TouchableOpacity onPress={onDelete}>
+      <Icon name="trash-outline" size={22} color="#DC2626" />
+    </TouchableOpacity>
+  </View>
+);
+
+/* ================= ESTILOS ================= */
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F3F4F6",
-  },
+  container: { flex: 1, backgroundColor: "#F3F4F6" },
 
   navbar: {
-    width: "100%",
     backgroundColor: "#1E3A8A",
-    paddingVertical: 35,
-    justifyContent: "center",
+    paddingVertical: 30,
     alignItems: "center",
-    marginBottom: 20,
   },
-  navbarText: {
-    color: "#fff",
-    fontSize: 26,
-    fontWeight: "bold",
-  },
+  navbarText: { color: "#fff", fontSize: 26, fontWeight: "bold" },
 
-  profileContainer: {
-    alignItems: "center",
-    marginBottom: 30,
-  },
-
+  profileContainer: { alignItems: "center", marginVertical: 20 },
   avatar: {
-    width: 95,
-    height: 95,
-    borderRadius: 50,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
     backgroundColor: "#1E40AF",
     justifyContent: "center",
     alignItems: "center",
   },
+  avatarText: { color: "#fff", fontSize: 40, fontWeight: "bold" },
+  ownerName: { fontSize: 22, fontWeight: "bold", marginTop: 10 },
+  ownerEmail: { color: "#6B7280" },
 
-  avatarText: {
-    fontSize: 45,
-    color: "#fff",
-    fontWeight: "bold",
-  },
-
-  ownerName: {
-    marginTop: 10,
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#1F2937",
-  },
-
-  ownerEmail: {
-    fontSize: 14,
-    color: "#6B7280",
-  },
-
-  menuContainer: {
-    width: "100%",
-    paddingHorizontal: 20,
-  },
-
-  card: {
-    width: "100%",
-    backgroundColor: "#FFFFFF",
-    paddingVertical: 20,
+  section: {
+    backgroundColor: "#fff",
+    marginHorizontal: 16,
+    marginBottom: 20,
     borderRadius: 14,
+    padding: 16,
+  },
+  sectionTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
+
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  rowText: { fontSize: 16 },
+
+  addButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 20,
-    marginBottom: 18,
-    elevation: 5,
+    marginTop: 12,
   },
-
-  iconCircle: {
-    width: 55,
-    height: 55,
-    borderRadius: 30,
-    backgroundColor: "#DBEAFE",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 20,
-  },
-
-  cardText: {
-    fontSize: 20,
-    fontWeight: "600",
+  addText: {
+    marginLeft: 6,
     color: "#1E3A8A",
+    fontWeight: "600",
   },
+
+  empty: { color: "#6B7280", fontStyle: "italic" },
 });
-
-
