@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
@@ -23,8 +24,7 @@ interface Cita {
   cliente: any;
   servicio: any;
   estado: string;
-
-  reviewRating?: number | null; 
+  reviewRating?: number | null;
 }
 
 export default function HistorialCitas() {
@@ -33,14 +33,14 @@ export default function HistorialCitas() {
 
   const [historialAgrupado, setHistorialAgrupado] = useState<any>({});
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
+  const [loadingId, setLoadingId] = useState<number | null>(null);
 
-  
   const cargarHistorial = async () => {
     try {
       const usuario = await getUsuario();
       const token = await getToken();
 
-      if (!usuario.barberoId) return;
+      if (!usuario?.barberoId) return;
 
       const res = await axios.get(
         `${API_URL}/appointments/barbero/${usuario.barberoId}`,
@@ -49,26 +49,12 @@ export default function HistorialCitas() {
 
       const hoy = new Date();
 
-      const pasadas: Cita[] = res.data.filter((cita: Cita) => {
-        const fechaCita = new Date(cita.fecha);
-        return fechaCita < hoy;
-      });
-
-      const citasConResena: Cita[] = pasadas.map((cita: Cita, index: number) => {
-          if (cita.estado === 'completado') {
-              if (index % 2 === 0) {
-                 
-                  cita.reviewRating = 3.5 + (index % 3) * 0.5; 
-              } else {
-                  cita.reviewRating = null; 
-              }
-          }
-          return cita;
+      const pasadas: Cita[] = res.data.filter((c: Cita) => {
+        return new Date(c.fecha) < hoy;
       });
 
       const agrupado: any = {};
-
-      citasConResena.forEach((cita: Cita) => {
+      pasadas.forEach((cita: Cita) => {
         const fecha = new Date(cita.fecha).toLocaleDateString("es-CO", {
           day: "numeric",
           month: "long",
@@ -80,7 +66,7 @@ export default function HistorialCitas() {
       });
 
       setHistorialAgrupado(agrupado);
-    } catch (err) {
+    } catch (err: any) {
       console.log("❌ Error historial:", err.response?.data || err.message);
     }
   };
@@ -89,23 +75,34 @@ export default function HistorialCitas() {
     cargarHistorial();
   }, []);
 
+  const cambiarEstado = async (citaId: number, estado: string) => {
+    try {
+      const token = await getToken();
+      setLoadingId(citaId);
+
+      await axios.patch(
+        `${API_URL}/appointments/${citaId}`,
+        { estado },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      Alert.alert("✅ Estado actualizado", `Cita ${estado}`);
+      cargarHistorial();
+    } catch (err: any) {
+      Alert.alert(
+        "❌ Error",
+        err.response?.data?.message || "No se pudo cambiar el estado"
+      );
+    } finally {
+      setLoadingId(null);
+    }
+  };
 
   const stateColors: any = {
     completado: "#34C759",
     cancelado: "#FF3B30",
     pendiente: "#A5A7AE",
   };
-  
-  // 💡 Función para ver la reseña (solo console.log por ahora)
-  const verResena = (cita: Cita) => {
-    if (cita.estado === 'completado' && cita.reviewRating) {
-        alert(`Reseña de ${cita.cliente?.nombre}: ${cita.reviewRating.toFixed(1)} estrellas`);
-        // navigation.navigate('verResena', { citaId: cita.id }); 
-    } else {
-        alert("Esta cita aún no tiene reseña.");
-    }
-  };
-
 
   const CitaCard = ({ cita }: { cita: Cita }) => (
     <View
@@ -128,30 +125,37 @@ export default function HistorialCitas() {
           {cita.servicio?.nombre}
         </Text>
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
-            <View
-              style={[
-                styles.statusTag,
-                { backgroundColor: stateColors[cita.estado] || "#999" },
-              ]}
-            >
-              <Text style={styles.statusText}>{cita.estado}</Text>
-            </View>
-            
-            {cita.estado === "completado" && (
-                <TouchableOpacity onPress={() => verResena(cita)} style={styles.reviewButton}>
-                    <Ionicons 
-                        name={cita.reviewRating ? "star" : "star-outline"} 
-                        size={18} 
-                        color={cita.reviewRating ? "#FFD700" : colors.textSecondary}
-                    />
-                    <Text style={[styles.reviewText, { color: colors.textSecondary }]}>
-                        {cita.reviewRating ? cita.reviewRating.toFixed(1) : "Sin calificar"}
-                    </Text>
-                </TouchableOpacity>
-            )}
-
+        <View style={{ flexDirection: "row", alignItems: "center", marginTop: 4 }}>
+          <View
+            style={[
+              styles.statusTag,
+              { backgroundColor: stateColors[cita.estado] || "#999" },
+            ]}
+          >
+            <Text style={styles.statusText}>{cita.estado}</Text>
+          </View>
         </View>
+
+        {/* 🔥 BOTONES DE ACCIÓN */}
+        {cita.estado === "pendiente" && (
+          <View style={styles.actions}>
+            <TouchableOpacity
+              style={[styles.btn, { backgroundColor: "#34C759" }]}
+              disabled={loadingId === cita.id}
+              onPress={() => cambiarEstado(cita.id, "completado")}
+            >
+              <Text style={styles.btnText}>Completar</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.btn, { backgroundColor: "#FF3B30" }]}
+              disabled={loadingId === cita.id}
+              onPress={() => cambiarEstado(cita.id, "cancelado")}
+            >
+              <Text style={styles.btnText}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
 
       <View style={{ alignItems: "flex-end" }}>
@@ -168,7 +172,6 @@ export default function HistorialCitas() {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
-      {/* HEADER */}
       <View style={[styles.header, { backgroundColor: colors.card }]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={26} color={colors.text} />
@@ -181,46 +184,26 @@ export default function HistorialCitas() {
         <Ionicons name="time-outline" size={24} color={colors.text} />
       </View>
 
-      {Object.keys(historialAgrupado).length === 0 && (
-        <Text
-          style={{
-            textAlign: "center",
-            marginTop: 40,
-            color: colors.textSecondary,
-          }}
-        >
-          No hay citas anteriores.
-        </Text>
-      )}
-
       {Object.entries(historialAgrupado).map(([fecha, citas]: any) => {
-        const mostrarTodas = expandedDays[fecha] === true;
-        const citasMostradas = mostrarTodas ? citas : citas.slice(0, 3);
+        const mostrarTodas = expandedDays[fecha];
+        const visibles = mostrarTodas ? citas : citas.slice(0, 3);
 
         return (
-          <View key={fecha} style={{ marginBottom: 20 }}>
-            <Text
-              style={[
-                styles.dateTitle,
-                { color: colors.text, paddingHorizontal: 15 },
-              ]}
-            >
+          <View key={fecha}>
+            <Text style={[styles.dateTitle, { color: colors.text }]}>
               Citas del {fecha}
             </Text>
 
-            {citasMostradas.map((cita: Cita) => (
-              <CitaCard key={cita.id} cita={cita} />
+            {visibles.map((c: Cita) => (
+              <CitaCard key={c.id} cita={c} />
             ))}
 
             {citas.length > 3 && (
               <TouchableOpacity
                 onPress={() =>
-                  setExpandedDays((prev) => ({
-                    ...prev,
-                    [fecha]: !prev[fecha],
-                  }))
+                  setExpandedDays(p => ({ ...p, [fecha]: !p[fecha] }))
                 }
-                style={{ alignItems: "center", marginTop: 6 }}
+                style={{ alignItems: "center" }}
               >
                 <Text style={{ color: "#3B6EF6", fontWeight: "600" }}>
                   {mostrarTodas ? "Mostrar menos ▲" : "Mostrar todas ▼"}
@@ -234,95 +217,45 @@ export default function HistorialCitas() {
   );
 }
 
-
 const styles = StyleSheet.create({
   header: {
-    width: "100%",
     paddingTop: 55,
     paddingBottom: 18,
     paddingHorizontal: 15,
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
+    alignItems: "center",
   },
-
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-  },
-
-  dateTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    marginBottom: 10,
-    marginTop: 20,
-  },
-
+  headerTitle: { fontSize: 18, fontWeight: "700" },
+  dateTitle: { fontSize: 17, fontWeight: "700", margin: 15 },
   card: {
     flexDirection: "row",
     padding: 12,
     marginHorizontal: 15,
     borderRadius: 12,
     marginBottom: 12,
-    alignItems: "center",
     borderWidth: 1,
   },
-
-  avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 50,
-  },
-
-  name: {
-    fontSize: 15,
-    fontWeight: "700",
-  },
-
-  service: {
-    fontSize: 13,
-  },
-  
+  avatar: { width: 50, height: 50, borderRadius: 50 },
+  name: { fontSize: 15, fontWeight: "700" },
+  service: { fontSize: 13 },
   statusTag: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 10,
-    alignSelf: "flex-start",
-    marginTop: 2,
   },
-
-  statusText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "600",
+  statusText: { color: "#fff", fontSize: 12, fontWeight: "600" },
+  actions: {
+    flexDirection: "row",
+    marginTop: 8,
   },
-  
-  reviewButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 10, 
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-
-    backgroundColor: 'rgba(0,0,0,0.1)', 
+  btn: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginRight: 8,
   },
-  reviewText: {
-    marginLeft: 4,
-    fontSize: 12,
-    fontWeight: "600",
-  },
-
-
-  time: {
-    fontSize: 15,
-    fontWeight: "700",
-  },
-
-  price: {
-    marginTop: 6,
-    fontSize: 15,
-    fontWeight: "700",
-  },
+  btnText: { color: "#fff", fontWeight: "700", fontSize: 12 },
+  time: { fontSize: 15, fontWeight: "700" },
+  price: { marginTop: 6, fontSize: 15, fontWeight: "700" },
 });
-
