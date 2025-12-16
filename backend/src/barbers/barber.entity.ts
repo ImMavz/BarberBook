@@ -4,6 +4,7 @@ import { Barbershop } from 'src/barbershops/barbershop.entity';
 import { Appointment } from 'src/appointments/appointment.entity';
 import { Schedule } from 'src/schedules/schedule.entity';
 import { Payment } from 'src/payments/payment.entity';
+import { Review } from 'src/reviews/review.entity';
 
 @Entity('barberos')
 export class Barber {
@@ -37,4 +38,8 @@ export class Barber {
 
   @OneToMany(() => Payment, (pay) => pay.barbero)
   pagos: Payment[];
+
+  @OneToMany(() => Review, (review) => review.barbero)
+  resenas: Review[];
+
 }

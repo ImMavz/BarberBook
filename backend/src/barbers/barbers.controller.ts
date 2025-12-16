@@ -32,7 +32,7 @@ export class BarbersController {
   @UseGuards(JwtAuthGuard)
   @Get("me")
   async getProfile(@Req() req) {
-    const idUsuario = req.user.sub; // viene del JWT
+    const idUsuario = req.user.id; // viene del JWT
     return this.service.findByUserId(idUsuario);
   }
 

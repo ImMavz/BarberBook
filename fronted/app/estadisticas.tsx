@@ -284,7 +284,7 @@ const cargarDatos = async () => {
             />
             <View style={{ marginLeft: 10 }}>
               <Text style={[styles.barberoNombre, { color: colors.text }]}>
-                {b.nombre}
+                {b.usuario?.nombre || "Barbero"}
               </Text>
             </View>
           </View>

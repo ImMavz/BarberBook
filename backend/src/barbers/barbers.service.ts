@@ -47,21 +47,44 @@ export class BarbersService {
   // ============================
   async findByUserId(idUsuario: number) {
     const barber = await this.repo.findOne({
-      where: { usuario: { id: idUsuario } },
-      relations: [
-        "usuario",
-        "barberia",
-        "citas",
-        "citas.servicio",
-        "citas.cliente",
-      ],
+      where: {
+        usuario: { id: idUsuario },
+      },
+      relations: {
+        usuario: true,
+        barberia: true,
+
+        citas: {
+          servicio: true,
+          cliente: true,
+        },
+
+        // 🔥 ESTA ES LA CLAVE REAL
+        resenas: {
+          cliente: true,
+        },
+      },
     });
 
     if (!barber) {
       throw new NotFoundException("Este usuario no es un barbero");
     }
 
-    return barber;
+    // 🔢 promedio real
+    const total = barber.resenas.reduce(
+      (acc, r) => acc + r.calificacionBarbero,
+      0
+    );
+
+    const promedioRating =
+      barber.resenas.length > 0
+        ? total / barber.resenas.length
+        : 0;
+
+    return {
+      ...barber,
+      promedioRating,
+    };
   }
 
   // ============================

@@ -30,7 +30,7 @@ export class Review {
   @JoinColumn({ name: "id_cliente" })
   cliente: User;
 
-  @ManyToOne(() => Barber)
+  @ManyToOne(() => Barber, (barber) => barber.resenas)
   @JoinColumn({ name: "id_barbero" })
   barbero: Barber;
 

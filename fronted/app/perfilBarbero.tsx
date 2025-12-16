@@ -135,11 +135,11 @@ export default function PerfilBarbero() {
           </View>
 
           <Text style={[styles.nombre, { color: colors.text }]}>
-            {barbero.usuario?.nombre || "Nombre Barbero"}
+            {usuario?.nombre || "Nombre Barbero"}
           </Text>
 
           <Text style={[styles.email, { color: colors.textSecondary }]}>
-            {barbero.usuario?.correo || "correo@barbero.com"}
+            {usuario?.correo || "correo@barbero.com"}
           </Text>
 
           <TouchableOpacity style={styles.linkButton}>
@@ -156,7 +156,7 @@ export default function PerfilBarbero() {
             ]}
           >
             <Text style={[styles.ratingNumber, { color: colors.text }]}>
-              {(barbero.rating || 4.8).toFixed(1)}
+              {(barbero.promedioRating ?? 0).toFixed(1)}
             </Text>
 
             <View style={styles.starsRow}>
@@ -183,16 +183,16 @@ export default function PerfilBarbero() {
             Opiniones Recientes
           </Text>
 
-          {resenas.slice(0, 3).map((resena, index) => (
+          {resenas.slice(0, 3).map((resena: any, index: number) => (
             <View
               key={index}
               style={[styles.resenaCard, { backgroundColor: colors.card }]}
             >
               <View style={styles.resenaHeader}>
                 <View style={styles.resenaLeft}>
-                  {resena.foto ? (
+                  {resena.cliente?.fotoPerfil ? (
                     <Image
-                      source={{ uri: resena.foto }}
+                      source={{ uri: resena.cliente.fotoPerfil }}
                       style={styles.resenaAvatar}
                     />
                   ) : (
@@ -209,23 +209,23 @@ export default function PerfilBarbero() {
 
                   <View style={styles.resenaInfo}>
                     <Text style={[styles.resenaName, { color: colors.text }]}>
-                      {resena.cliente}
+                      {resena.cliente?.nombre ?? "Cliente"}
                     </Text>
-                    {renderEstrellas(resena.rating)}
+
+                    {renderEstrellas(resena.calificacionBarbero)}
                   </View>
                 </View>
               </View>
 
               <Text style={[styles.resenaText, { color: colors.textSecondary }]}>
-                {resena.comentario}
+                {resena.comentarioBarbero || "Sin comentario"}
               </Text>
 
               <Text style={[styles.resenaFecha, { color: colors.textSecondary }]}>
                 {resena.fecha}
               </Text>
             </View>
-          ))}
-          
+          ))}       
           {resenas.length > 3 && (
             <TouchableOpacity style={styles.verTodasButton}>
               <Text style={{ color: "#4A90E2", fontSize: 15, fontWeight: "600" }}>

@@ -33,6 +33,12 @@ export default function HomeBarbero() {
   const [rating, setRating] = useState(0); 
   
   const [actividadReciente, setActividadReciente] = useState<any[]>([]);
+      const formatMoney = (value: number) =>
+       new Intl.NumberFormat("es-CO", {
+      style: "currency",
+      currency: "COP",
+      minimumFractionDigits: 0,
+    }).format(value);
 
   const cargarUsuario = async () => {
     const u = await getUsuario();
@@ -57,13 +63,13 @@ export default function HomeBarbero() {
       const citasCompletadasHoy = data.citas.filter(
         (c: any) =>
           c.fecha === hoy &&
-          (c.estado === "confirmada" || c.estado === "completada")
+          (c.estado === "pendiente" || c.estado === "completada")
       );
       setCitasHoy(citasCompletadasHoy.length);
 
       // 2. Ganancias de HOY
       const totalGananciasHoy = citasCompletadasHoy.reduce(
-        (acc: number, c: any) => acc + (c.servicio?.precio || 0),
+        (acc: number, c: any) => acc + Number(c.servicio?.precio || 0),
         0
       );
       setGananciasHoy(totalGananciasHoy);
@@ -85,7 +91,7 @@ export default function HomeBarbero() {
           nombre: c.cliente.nombre,
           descripcion: `${c.servicio?.nombre} - $${c.servicio?.precio}`,
           hace: c.fecha,
-          foto: c.cliente.fotoPerfil || "https://i.pravatar.cc/150?img=5",
+          foto: c.cliente.fotoPerfil || "https://images.pexels.com/photos/14661/pexels-photo-14661.jpeg",
           completado: c.estado === "completada",
         }));
 
@@ -157,7 +163,7 @@ export default function HomeBarbero() {
 
         <View style={[styles.statBox, { backgroundColor: colors.card }]}>
           <Text style={[styles.statNumber, { color: colors.text }]}>
-            ${gananciasHoy}
+            {formatMoney(gananciasHoy)}
           </Text>
           <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
             Ganancias
